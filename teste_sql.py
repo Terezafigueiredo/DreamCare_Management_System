@@ -12,4 +12,4 @@ print(df)
 conexao.close()
 
 
-um pipeline ETL+ simples integração Excel → +Banco persistência de dados+início de um sistema real
+#um pipeline ETL+ simples integração Excel → +Banco persistência de dados+início de um sistema real
