@@ -4,4 +4,3 @@ venv/
 *.pyc
 *.xlsx
 *.db
-*.png
