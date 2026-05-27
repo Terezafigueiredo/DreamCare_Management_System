@@ -124,7 +124,41 @@ O projeto nasceu da necessidade de automatizar cadastros que anteriormente eram 
 * Inteligência Artificial para categorização de sonhos
 * Automação de cadastros e notificações
 
-   ## Como executar o dashboard
+## Como executar o dashboard
 
 ```bash
 streamlit run dashboard.py
+
+## Dashboard 1
+
+![Dashboard](imagens/dashboards%20(1).png)
+
+---
+
+## Dashboard 2
+
+![Dashboard](imagens/dashboards%20(2).png)
+
+---
+
+## Dashboard 3
+
+![Dashboard](imagens/dashboards%20(3).png)
+
+---
+
+## Dashboard 4
+
+![Dashboard](imagens/dashboards%20(4).png)
+
+---
+
+## Dashboard 5
+
+![Dashboard](imagens/dashboards%20(5).png)
+
+---
+
+## Dashboard 6
+
+![Dashboard](imagens/dashboards%20(6).png)
