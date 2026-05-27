@@ -126,8 +126,10 @@ O projeto nasceu da necessidade de automatizar cadastros que anteriormente eram 
 
 ## Como executar o dashboard
 
+
 ```bash
 streamlit run dashboard.py
+```
 
 ## Dashboard 1
 
