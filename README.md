@@ -129,8 +129,6 @@ O projeto nasceu da necessidade de automatizar cadastros que anteriormente eram 
 ```bash
 streamlit run dashboard.py
 
-# Dashboard Analítico
-
 ## Dashboard 1
 
 ![Dashboard](imagens/dashboards%20(1).png)
