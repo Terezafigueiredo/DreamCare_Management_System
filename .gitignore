@@ -1,6 +1,20 @@
+# Variáveis de ambiente
 .env
-__pycache__/
+
+# Ambiente virtual
+.venv/
 venv/
+
+# Cache do Python
+__pycache__/
 *.pyc
-*.xlsx
+
+# Banco SQLite
 *.db
+
+# Planilhas
+*.xlsx
+
+# Credenciais do Google
+credentials/
+token.json
