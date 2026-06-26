@@ -18,3 +18,4 @@ __pycache__/
 # Credenciais do Google
 credentials/
 token.json
+token.pickle
