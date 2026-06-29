@@ -5,12 +5,14 @@ from googleapiclient.http import MediaIoBaseDownload
 import io
 import os
 import pickle
+from dotenv import load_dotenv
 
+load_dotenv()
 
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
-ID_PLANILHA_PRINCIPAL = "1MnU15iZqCmChA-FgwAww-UhxjR-MY1i1"
-CAMINHO_DESTINO = "dados/sonhos.xlsx"
+ID_PLANILHA_PRINCIPAL = os.getenv("ID_PLANILHA_PRINCIPAL")
+CAMINHO_DESTINO = os.getenv("CAMINHO_DESTINO")
 
 
 def conectar_drive():
