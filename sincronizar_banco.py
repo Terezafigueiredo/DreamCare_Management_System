@@ -1,13 +1,13 @@
 import os
-
+import time
 import psycopg2
 import pandas as pd
 
 from dotenv import load_dotenv
-
 from etl_sonhos import carregar_sonhos_tratados
 
 load_dotenv()
+
 
 def conectar_banco():
     conexao = psycopg2.connect(
@@ -17,8 +17,8 @@ def conectar_banco():
         password=os.getenv("DB_PASSWORD"),
         port=os.getenv("DB_PORT")
     )
-
     return conexao
+
 
 def tratar_valor(valor):
     if pd.isna(valor):
@@ -33,7 +33,6 @@ def carregar_ids_existentes(cursor):
     """)
 
     resultado = cursor.fetchall()
-
     ids_existentes = {linha[0] for linha in resultado}
 
     return ids_existentes
@@ -116,22 +115,38 @@ def sincronizar_sonhos(cursor, df):
 
 
 if __name__ == "__main__":
+    inicio = time.time()
+
+    print("=" * 45)
+    print("              DreamCare Sync")
+    print("=" * 45)
+
+    print("\n🔄 Conectando ao PostgreSQL...")
     conexao = conectar_banco()
-    print("Conectado ao banco com sucesso!")
+    print("✅ Banco conectado com sucesso.")
 
     cursor = conexao.cursor()
 
+    print("\n📄 Lendo planilha tratada...")
     df = carregar_sonhos_tratados()
+    print(f"✅ {len(df)} registros encontrados na planilha.")
 
+    print("\n🔄 Sincronizando dados com o banco...")
     inseridos, atualizados = sincronizar_sonhos(cursor, df)
 
     conexao.commit()
 
-    print("\n========== DreamCare Sync ==========")
-    print(f"Registros na planilha: {len(df)}")
-    print(f"Inseridos: {inseridos}")
-    print(f"Atualizados: {atualizados}")
-    print("====================================")
-    print("Sincronização concluída com sucesso!")
+    fim = time.time()
 
+    print("\n📊 Resultado da sincronização")
+    print("-" * 45)
+    print(f"📥 Inseridos: {inseridos}")
+    print(f"🔁 Atualizados: {atualizados}")
+    print(f"⏱️ Tempo total: {fim - inicio:.2f} segundos")
+    print("-" * 45)
+
+    print("\n✅ Sincronização concluída com sucesso!")
+    print("=" * 45)
+
+    cursor.close()
     conexao.close()
