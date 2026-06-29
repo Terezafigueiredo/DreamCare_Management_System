@@ -25,7 +25,7 @@ def listar_sonhos():
     conexao = conectar()
     cursor = conexao.cursor()
 
-    cursor.execute('SELECT * FROM sonhos ORDER BY "ID" ASC')
+    cursor.execute("SELECT * FROM sonhos ORDER BY id ASC")
     dados = cursor.fetchall()
 
     for linha in dados:

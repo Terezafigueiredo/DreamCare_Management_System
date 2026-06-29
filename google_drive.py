@@ -7,87 +7,50 @@ import os
 import pickle
 
 
-SCOPES = [
-    "https://www.googleapis.com/auth/drive.readonly"
-]
+SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
+
+ID_PLANILHA_PRINCIPAL = "1MnU15iZqCmChA-FgwAww-UhxjR-MY1i1"
+CAMINHO_DESTINO = "dados/sonhos.xlsx"
 
 
 def conectar_drive():
+    print("🔄 Conectando ao Google Drive...")
+
     creds = None
 
     if os.path.exists("token.pickle"):
+        print("✅ Token encontrado.")
         with open("token.pickle", "rb") as token:
             creds = pickle.load(token)
 
     if not creds:
+        print("🔐 Fazendo login no Google...")
+
         flow = InstalledAppFlow.from_client_secrets_file(
             "credentials/credentials.json",
             SCOPES
         )
 
         creds = flow.run_local_server(
-            port=8080,
+            port=0,
             open_browser=True
         )
 
         with open("token.pickle", "wb") as token:
             pickle.dump(creds, token)
 
+        print("✅ Login realizado.")
+
     service = build("drive", "v3", credentials=creds)
+
+    print("✅ Serviço do Drive conectado.")
     return service
 
 
-def procurar_pasta(service, nome_pasta):
-    resultado = service.files().list(
-        q=f"name='{nome_pasta}' and mimeType='application/vnd.google-apps.folder' and trashed=false",
-        fields="files(id, name)"
-    ).execute()
-
-    pastas = resultado.get("files", [])
-
-    if not pastas:
-        return None
-
-    return pastas[0]["id"]
-
-
-def percorrer_pastas(service, id_pasta, planilhas=None):
-    if planilhas is None:
-        planilhas = []
-
-    resultado = service.files().list(
-        q=f"'{id_pasta}' in parents and trashed=false",
-        fields="files(id, name, mimeType)"
-    ).execute()
-
-    arquivos = resultado.get("files", [])
-
-    for arquivo in arquivos:
-        nome = arquivo["name"]
-        tipo = arquivo["mimeType"]
-
-        if tipo == "application/vnd.google-apps.folder":
-            percorrer_pastas(service, arquivo["id"], planilhas)
-
-        elif (
-            nome.endswith(".xlsx")
-            or tipo == "application/vnd.google-apps.spreadsheet"
-        ):
-            planilhas.append({
-                "nome": nome,
-                "id": arquivo["id"],
-                "tipo": tipo
-            })
-
-    return planilhas
-
-
-def baixar_planilha(service, file_id, nome_arquivo):
-    print("1 - Preparando download...")
+def baixar_planilha_google(service, file_id, caminho_destino):
+    print("⬇️ Baixando planilha principal do Google Drive...")
 
     request = service.files().get_media(fileId=file_id)
-
-    print("2 - Requisição criada.")
 
     arquivo = io.BytesIO()
     downloader = MediaIoBaseDownload(arquivo, request)
@@ -95,7 +58,6 @@ def baixar_planilha(service, file_id, nome_arquivo):
     concluido = False
 
     while not concluido:
-        print("3 - Baixando...")
         status, concluido = downloader.next_chunk()
 
         if status:
@@ -103,48 +65,22 @@ def baixar_planilha(service, file_id, nome_arquivo):
 
     arquivo.seek(0)
 
-    os.makedirs(os.path.dirname(nome_arquivo), exist_ok=True)
+    os.makedirs(os.path.dirname(caminho_destino), exist_ok=True)
 
-    with open(nome_arquivo, "wb") as f:
+    with open(caminho_destino, "wb") as f:
         f.write(arquivo.read())
 
-    print(f"✅ Arquivo salvo em {nome_arquivo}")
-    
-    
-    
-# PROGRAMA PRINCIPAL
+    print(f"✅ Planilha salva em: {caminho_destino}")
+
+
+print("🚀 Iniciando DreamCare Google Drive Sync...")
+
 service = conectar_drive()
 
-id_sonhos = procurar_pasta(service, "Sonhos")
+baixar_planilha_google(
+    service,
+    ID_PLANILHA_PRINCIPAL,
+    CAMINHO_DESTINO
+)
 
-if id_sonhos:
-    planilhas = percorrer_pastas(service, id_sonhos)
-
-    print(f"\nTotal de planilhas encontradas: {len(planilhas)}\n")
-
-    for planilha in planilhas:
-        print(f"{planilha['nome']} --> {planilha['id']}")
-
-    planilha_principal = None
-
-    for planilha in planilhas:
-        if planilha["nome"].startswith("Sonhos Realizados"):
-            planilha_principal = planilha
-            break
-
-    if planilha_principal:
-        print("\n===== PLANILHA PRINCIPAL =====")
-        print(f"Nome: {planilha_principal['nome']}")
-        print(f"ID: {planilha_principal['id']}")
-
-        baixar_planilha(
-            service,
-            planilha_principal["id"],
-            "dados/sonhos.xlsx"
-        )
-
-    else:
-        print("Planilha principal não encontrada.")
-
-else:
-    print("Pasta Sonhos não encontrada.")
+print("✅ Sincronização finalizada com sucesso.")
