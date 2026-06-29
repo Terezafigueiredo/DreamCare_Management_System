@@ -1,166 +1,234 @@
-# DreamCare Management System
+# 🏆 DreamCare Management System
 
-Sistema completo de gestão e análise de sonhos de pacientes desenvolvido com Python, Tkinter, PostgreSQL e Streamlit, criado com foco em organização, automação, análise de dados e impacto social.
+<p align="center">
+  <img src="imagens/logo.png" alt="DreamCare Management System" width="220">
+</p>
 
-O projeto permite cadastrar, visualizar, editar, pesquisar e excluir registros de sonhos de pacientes em tratamento de saúde, oferecendo uma interface gráfica integrada a banco de dados e módulos analíticos.
+<p align="center">
 
-Além do CRUD completo, o sistema também realiza integração com planilhas Excel, tratamento de dados, geração de métricas e dashboards interativos para análise estratégica das informações.
+![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-336791?logo=postgresql)
+![Pandas](https://img.shields.io/badge/Pandas-ETL-150458?logo=pandas)
+![Tkinter](https://img.shields.io/badge/Tkinter-Desktop-green)
+![Git](https://img.shields.io/badge/Git-Version%20Control-F05032?logo=git)
+![GitHub](https://img.shields.io/badge/GitHub-Portfolio-black?logo=github)
 
+</p>
 
+<p align="center">
+Sistema desenvolvido para automatizar o gerenciamento dos sonhos realizados pelo Instituto Rope, integrando ETL, PostgreSQL, Google Drive e uma interface desktop em Python.
+</p>
 
-# Funcionalidades
+---
 
-## Gestão de Dados
+# 📖 Sobre o Projeto
 
-* Cadastro de pacientes e sonhos
-* Edição e exclusão de registros
-* Pesquisa dinâmica por nome, hospital e status
-* Listagem de registros em tabela
-* Integração com PostgreSQL
-* Importação de dados via Excel
-* Tratamento e padronização de dados
+O **DreamCare Management System** nasceu para resolver um problema real: organizar e automatizar o gerenciamento dos sonhos realizados pelo Instituto Rope.
 
+Anteriormente, todas as informações eram controladas manualmente em planilhas, tornando o processo demorado, sujeito a erros e difícil de consultar.
 
+O sistema automatiza todo esse fluxo, desde o download da planilha no Google Drive até a sincronização com um banco PostgreSQL, oferecendo uma interface intuitiva para consulta e gerenciamento dos registros.
 
-# Módulo Analítico
+---
 
-O sistema possui um módulo de análise de dados desenvolvido para transformar informações em métricas e insights visuais.
+# 🎯 Objetivos
 
-## Métricas disponíveis
+* Automatizar processos manuais
+* Centralizar as informações dos sonhos
+* Garantir integridade dos dados
+* Facilitar consultas e atualizações
+* Preparar a base para dashboards e análises
 
-* Total de sonhos cadastrados
-* Ano com maior número de sonhos realizados
-* Distribuição por sexo
-* Média de idade dos pacientes
-* Faixa etária mais atendida
-* Sonhos mais frequentes
-* Enfermidades mais recorrentes
-* Contatos que mais idealizaram sonhos
+---
 
+# 🚀 Principais Funcionalidades
 
+* Download automático da planilha no Google Drive
+* Processo ETL utilizando Pandas
+* Limpeza e padronização dos dados
+* Sincronização inteligente com PostgreSQL
+* Inserção automática de novos registros
+* Atualização automática de registros existentes
+* Interface Desktop em Tkinter
+* Cadastro de sonhos
+* Pesquisa por registros
+* Edição de informações
+* Exclusão de registros
+* Estrutura modular para facilitar manutenção
 
-# Dashboard Interativo
+---
 
-Foi desenvolvido um dashboard analítico utilizando Streamlit e Plotly, permitindo:
+# 🏗 Arquitetura do Sistema
 
-* Navegação através de menu lateral
-* Visualização de gráficos dinâmicos
-* Exploração da base de dados em tempo real
-* Análise estatística dos registros
-* Organização visual das métricas
+<p align="center">
+<img src="imagens/arquitetura.png">
+</p>
 
-O dashboard possibilita uma análise mais estratégica e intuitiva dos dados do projeto.
+---
 
+# 🔄 Fluxo de Dados
 
+```text
+Google Drive
+      │
+      ▼
+Download Automático
+      │
+      ▼
+ETL (Pandas)
+      │
+      ▼
+Tratamento dos Dados
+      │
+      ▼
+PostgreSQL
+      │
+      ▼
+Aplicação Desktop (Tkinter)
+```
 
-# Tecnologias Utilizadas
+---
+
+# 📸 Demonstração
+
+## Interface Principal
+
+<p align="center">
+<img src="imagens/interface_principal.jpg">
+</p>
+
+---
+
+## Cadastro de Sonhos
+
+<p align="center">
+<img src="imagens/cadastro_sonhos.jpg">
+</p>
+
+---
+
+## Sincronização Automática
+
+<p align="center">
+<img src="imagens/sincronizacao_terminal.jpg">
+</p>
+
+---
+
+## Banco PostgreSQL
+
+<p align="center">
+<img src="imagens/banco_postgresql.jpg">
+</p>
+
+---
+
+# 🛠 Tecnologias Utilizadas
 
 * Python
-* Tkinter
 * PostgreSQL
 * Pandas
-* Streamlit
-* Plotly
-* Matplotlib
-* SQLAlchemy
+* Tkinter
+* Google Drive API
 * Psycopg2
-* OpenPyXL
+* python-dotenv
+* Git
+* GitHub
 
+---
 
+# 📂 Estrutura do Projeto
 
-# Estrutura do Projeto
-
-```bash
-DreamCare_Management_System/
+```text
+DreamCare_Management_System
 │
 ├── app_sonhos.py
-├── dashboard.py
-├── metricas.py
-├── limpeza.py
-├── importar_bd.py
+├── google_drive.py
+├── etl_sonhos.py
+├── sincronizar_banco.py
 ├── postgres_import.py
-├── teste_sql.py
 │
-├── README.md
-├── .gitignore
+├── dados/
+├── imagens/
+├── logs/
+├── credentials/
 │
-└── arquivos auxiliares
+└── README.md
 ```
 
+---
 
-# Objetivo
+# ▶️ Como Executar
 
-Criar uma plataforma de gestão de dados com propósito social, unindo:
-
-* desenvolvimento de software,
-* banco de dados,
-* análise de dados,
-* visualização de métricas,
-* automação de processos.
-
-O projeto nasceu da necessidade de automatizar cadastros que anteriormente eram feitos em planilhas Excel, tornando o processo mais organizado, seguro, escalável e preparado para futuras análises e dashboards.
-
-
-
-# Diferenciais do Projeto
-
-* CRUD completo integrado ao PostgreSQL
-* Pipeline de limpeza e tratamento de dados
-* Dashboard analítico interativo
-* Visualização de métricas em tempo real
-* Estrutura preparada para BI e automações
-* Projeto aplicado a um caso real com impacto social
-* Integração entre sistema desktop, banco de dados e analytics
-
-
-
-# Possíveis Evoluções
-
-* Sistema de login e permissões
-* Hospedagem em nuvem
-* Dashboard online
-* Geração automática de relatórios PDF
-* Integração com APIs
-* Inteligência Artificial para categorização de sonhos
-* Automação de cadastros e notificações
-
-## Como executar o dashboard
-
+## Clone o repositório
 
 ```bash
-streamlit run dashboard.py
+git clone https://github.com/Terezafigueiredo/DreamCare_Management_System.git
 ```
 
-## Dashboard 1
+## Instale as dependências
 
-![Dashboard](imagens/dashboards%20(1).png)
+```bash
+pip install -r requirements.txt
+```
 
----
+## Configure as variáveis de ambiente
 
-## Dashboard 2
+Crie um arquivo `.env` com as credenciais do PostgreSQL.
 
-![Dashboard](imagens/dashboards%20(2).png)
+Exemplo:
 
----
+```env
+DB_HOST=localhost
+DB_NAME=projeto_rope
+DB_USER=postgres
+DB_PASSWORD=sua_senha
+DB_PORT=5432
+```
 
-## Dashboard 3
+## Execute
 
-![Dashboard](imagens/dashboards%20(3).png)
-
----
-
-## Dashboard 4
-
-![Dashboard](imagens/dashboards%20(4).png)
-
----
-
-## Dashboard 5
-
-![Dashboard](imagens/dashboards%20(5).png)
+```bash
+python app_sonhos.py
+```
 
 ---
 
-## Dashboard 6
+# 📈 Próximas Implementações
 
-![Dashboard](imagens/dashboards%20(6).png)
+* Dashboard em Streamlit
+* Dashboard Power BI
+* API REST
+* Login de usuários
+* Controle de permissões
+* Relatórios em PDF
+* Backup automático
+* Deploy em nuvem
+
+---
+
+# 👩‍💻 Sobre a Desenvolvedora
+
+**Tereza Cristina Silva Figueiredo**
+
+Estudante de Análise e Desenvolvimento de Sistemas, apaixonada por desenvolvimento de software, banco de dados, automação e análise de dados.
+
+Este projeto foi desenvolvido para aplicar conhecimentos em:
+
+* Engenharia de Software
+* Python
+* ETL
+* PostgreSQL
+* Desktop Development
+* Integração de Sistemas
+* Organização de Projetos
+* Versionamento com Git
+
+---
+
+# ⭐ Gostou do projeto?
+
+Se este projeto foi útil ou interessante para você, deixe uma ⭐ no repositório.
+
+Isso incentiva a continuidade do desenvolvimento e ajuda outras pessoas a encontrarem o projeto.
+
