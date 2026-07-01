@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>DreamCare Management System</title>
+
+  <meta name="description" content="Sistema para gestão, automação e análise de sonhos realizados pelo Instituto Rope." />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <a href="#conteudo" class="skip-link">Pular para o conteúdo</a>
+
+  <header class="header">
+    <img src="assets/logo.png" alt="Logo DreamCare" class="logo" />
+
+    <nav aria-label="Menu principal">
+      <a href="#sobre">Sobre</a>
+      <a href="#metricas">Métricas</a>
+      <a href="#arquitetura">Arquitetura</a>
+      <a href="#tecnologias">Tecnologias</a>
+    </nav>
+  </header>
+
+  <main id="conteudo">
+    <section class="hero">
+      <div class="hero-texto">
+        <span class="tag">Projeto de Tecnologia com Impacto Social</span>
+
+        <h1>DreamCare Management System</h1>
+
+        <p>
+          Sistema desenvolvido para automatizar a gestão de sonhos realizados pelo Instituto Rope,
+          integrando dados, banco PostgreSQL, API REST e interface web.
+        </p>
+
+        <div class="botoes">
+          <a href="#metricas" class="btn primario">Ver métricas</a>
+          <a href="https://github.com/Terezafigueiredo/DreamCare_Management_System" class="btn secundario" target="_blank">
+            Ver GitHub
+          </a>
+        </div>
+      </div>
+
+      <div class="hero-imagem">
+        <img src="assets/banner.jpg" alt="Imagem visual representando o projeto DreamCare" />
+      </div>
+    </section>
+
+    <section id="metricas" class="metricas" aria-labelledby="titulo-metricas">
+      <h2 id="titulo-metricas">Impacto em tempo real</h2>
+
+      <div class="grid-metricas">
+        <article class="card-metrica">
+          <strong id="total-sonhos">0</strong>
+          <span>sonhos cadastrados</span>
+        </article>
+
+        <article class="card-metrica">
+          <strong>PostgreSQL</strong>
+          <span>banco de dados</span>
+        </article>
+
+        <article class="card-metrica">
+          <strong>FastAPI</strong>
+          <span>API REST</span>
+        </article>
+
+        <article class="card-metrica">
+          <strong>ETL</strong>
+          <span>tratamento de dados</span>
+        </article>
+      </div>
+    </section>
+
+    <section id="sobre" class="secao">
+      <h2>Sobre o projeto</h2>
+      <p>
+        O DreamCare foi criado para organizar, consultar e analisar informações sobre sonhos realizados,
+        transformando planilhas em dados estruturados e acessíveis para tomada de decisão.
+      </p>
+    </section>
+
+    <section id="arquitetura" class="secao">
+      <h2>Arquitetura</h2>
+
+      <div class="fluxo">
+        <span>Google Drive</span>
+        <span>ETL</span>
+        <span>PostgreSQL</span>
+        <span>FastAPI</span>
+        <span>Landing Page</span>
+      </div>
+    </section>
+
+    <section id="tecnologias" class="secao">
+      <h2>Tecnologias utilizadas</h2>
+
+      <div class="tecnologias">
+        <span>Python</span>
+        <span>FastAPI</span>
+        <span>PostgreSQL</span>
+        <span>Pandas</span>
+        <span>Tkinter</span>
+        <span>HTML</span>
+        <span>CSS</span>
+        <span>JavaScript</span>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>DreamCare Management System — Tecnologia para impacto social.</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
