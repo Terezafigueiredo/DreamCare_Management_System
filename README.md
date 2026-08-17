@@ -1,4 +1,4 @@
-# 🏆 DreamCare Management System
+# 💜 DreamCare Management System
 
 <p align="center">
   <img src="imagens/logo.png" alt="DreamCare Management System" width="220">
@@ -7,176 +7,387 @@
 <p align="center">
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python)
+![FastAPI](https://img.shields.io/badge/FastAPI-REST_API-009688?logo=fastapi)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-336791?logo=postgresql)
 ![Pandas](https://img.shields.io/badge/Pandas-ETL-150458?logo=pandas)
-![Tkinter](https://img.shields.io/badge/Tkinter-Desktop-green)
-![Git](https://img.shields.io/badge/Git-Version%20Control-F05032?logo=git)
-![GitHub](https://img.shields.io/badge/GitHub-Portfolio-black?logo=github)
+![Google Drive](https://img.shields.io/badge/Google_Drive-Integration-4285F4?logo=googledrive)
+![JavaScript](https://img.shields.io/badge/JavaScript-Frontend-F7DF1E?logo=javascript)
+![Git](https://img.shields.io/badge/Git-Version_Control-F05032?logo=git)
 
 </p>
 
 <p align="center">
-Sistema desenvolvido para automatizar o gerenciamento dos sonhos realizados pelo Instituto Rope, integrando ETL, PostgreSQL, Google Drive e uma interface desktop em Python.
+Plataforma desenvolvida para organizar dados, localizar mídias, automatizar processos e apoiar a gestão editorial dos sonhos realizados pelo Instituto Rope.
 </p>
 
 ---
 
-# 📖 Sobre o Projeto
+# 📖 Sobre o projeto
 
-O **DreamCare Management System** nasceu para resolver um problema real: organizar e automatizar o gerenciamento dos sonhos realizados pelo Instituto Rope.
+O **DreamCare Management System** nasceu para solucionar um problema real do Instituto Rope.
 
-Anteriormente, todas as informações eram controladas manualmente em planilhas, tornando o processo demorado, sujeito a erros e difícil de consultar.
+As informações dos sonhos realizados eram mantidas principalmente em planilhas, enquanto fotos e vídeos estavam distribuídos em diferentes pastas do Google Drive.
 
-O sistema automatiza todo esse fluxo, desde o download da planilha no Google Drive até a sincronização com um banco PostgreSQL, oferecendo uma interface intuitiva para consulta e gerenciamento dos registros.
+Com o crescimento da base, localizar informações e mídias, acompanhar conteúdos produzidos e controlar publicações passou a exigir cada vez mais trabalho manual.
 
----
-
-# 🎯 Objetivos
-
-* Automatizar processos manuais
-* Centralizar as informações dos sonhos
-* Garantir integridade dos dados
-* Facilitar consultas e atualizações
-* Preparar a base para dashboards e análises
+O DreamCare transforma esse processo em uma plataforma integrada, conectando **dados, automação, banco de dados, API, Google Drive e uma aplicação web voltada à gestão de conteúdo**.
 
 ---
 
-# 🚀 Principais Funcionalidades
+# 🚀 Evolução do projeto
 
-* Download automático da planilha no Google Drive
-* Processo ETL utilizando Pandas
-* Limpeza e padronização dos dados
-* Sincronização inteligente com PostgreSQL
-* Inserção automática de novos registros
-* Atualização automática de registros existentes
-* Interface Desktop em Tkinter
-* Cadastro de sonhos
-* Pesquisa por registros
-* Edição de informações
-* Exclusão de registros
-* Estrutura modular para facilitar manutenção
+O DreamCare começou como um projeto de tratamento e organização de dados.
 
----
+A primeira solução utilizava:
 
-# 🏗 Arquitetura do Sistema
+```text
+Planilha
+   ↓
+Python + Pandas
+   ↓
+ETL
+   ↓
+PostgreSQL
+   ↓
+Interface Desktop com Tkinter
+```
 
-<p align="center">
-<img src="imagens/arquitetura.png">
-</p>
+O desktop funcionou como MVP para validar o cadastro, consulta e gerenciamento dos registros.
 
----
-
-# 🔄 Fluxo de Dados
+Com a evolução das necessidades, a arquitetura foi ampliada:
 
 ```text
 Google Drive
-      │
-      ▼
-Download Automático
-      │
-      ▼
-ETL (Pandas)
-      │
-      ▼
-Tratamento dos Dados
-      │
-      ▼
+      ↓
+ETL / Integração de Dados
+      ↓
 PostgreSQL
-      │
-      ▼
-Aplicação Desktop (Tkinter)
+      ↓
+FastAPI
+      ↓
+Aplicação Web
+      ↓
+Gestão Editorial
+```
+
+Hoje o DreamCare deixou de ser apenas uma aplicação de cadastro e passou a apoiar também o fluxo de produção de conteúdo.
+
+---
+
+# 🖥️ Painel DreamCare
+
+A página inicial funciona como um painel central da aplicação.
+
+Ela apresenta indicadores do fluxo editorial e permite acessar rapidamente:
+
+- Central de Conteúdo
+- Produção da Semana
+- Sugestões da Semana
+- Histórico de Publicações
+- Assistente DreamCare
+- Indicadores do projeto
+
+Também exibe dados atualizados diretamente pela API.
+
+<p align="center">
+  <img src="imagens/dreamcare-painel.png" alt="Painel principal do DreamCare">
+</p>
+
+---
+
+# 🔎 Central de Conteúdo
+
+A Central de Conteúdo permite pesquisar os sonhos cadastrados e localizar rapidamente materiais disponíveis para produção.
+
+É possível pesquisar utilizando:
+
+- Nome
+- Sonho
+- Enfermidade
+- Idealizador
+- Idade máxima
+- Faixa etária
+- Disponibilidade de fotos
+- Disponibilidade de vídeos
+
+Os resultados são integrados às respectivas pastas do Google Drive.
+
+<p align="center">
+  <img src="imagens/dreamcare-central.png" alt="Central de Conteúdo do DreamCare">
+</p>
+
+---
+
+# ✨ Sugestões Editoriais
+
+O sistema também analisa automaticamente a disponibilidade de mídias dos sonhos cadastrados.
+
+Com base principalmente na quantidade de fotos, vídeos e disponibilidade do registro, o DreamCare apresenta sugestões de conteúdos com bom potencial editorial.
+
+```text
+Sonhos cadastrados
+        ↓
+Mídias disponíveis
+        ↓
+Análise dos registros
+        ↓
+Sugestões editoriais
+        ↓
+Produção da semana
+```
+
+A partir da própria sugestão é possível:
+
+- consultar o sonho;
+- visualizar a quantidade de mídias;
+- abrir a pasta no Google Drive;
+- adicionar o conteúdo à produção da semana.
+
+---
+
+# 🎬 Produção de Conteúdo
+
+Os conteúdos selecionados entram em um fluxo visual de produção.
+
+O processo é dividido em quatro etapas:
+
+```text
+Fila da Semana
+      ↓
+Em Edição
+      ↓
+Pronto para Postar
+      ↓
+Publicado
+```
+
+Cada conteúdo pode receber um formato editorial:
+
+- Reel
+- Carrossel
+- Story
+- Post
+
+O usuário também pode acessar diretamente as mídias no Google Drive e avançar ou retornar o conteúdo entre as etapas.
+
+<p align="center">
+  <img src="imagens/dreamcare-producao.png" alt="Produção de Conteúdo do DreamCare">
+</p>
+
+---
+
+# ✅ Histórico de Publicações
+
+Ao finalizar uma produção, o conteúdo passa a integrar automaticamente o histórico.
+
+O histórico registra informações como:
+
+- sonho;
+- pessoa atendida;
+- tipo de conteúdo;
+- quantidade de mídias;
+- data de publicação;
+- pasta correspondente no Google Drive.
+
+Também é possível pesquisar por **ano de publicação** e **tipo de conteúdo**.
+
+Isso ajuda a equipe a consultar conteúdos anteriores e evitar repetição de sonhos nas publicações.
+
+<p align="center">
+  <img src="imagens/dreamcare-historico.png" alt="Histórico de Publicações do DreamCare">
+</p>
+
+---
+
+# 💬 Assistente DreamCare
+
+O projeto também possui uma interface de consulta utilizando linguagem simples.
+
+Em vez de depender apenas dos filtros tradicionais, o usuário pode escrever consultas como:
+
+```text
+crianças abaixo de 10 anos com fotos e vídeos
+```
+
+A aplicação interpreta a solicitação e utiliza os dados disponíveis para localizar registros compatíveis.
+
+Essa funcionalidade representa a evolução do projeto em direção a interfaces mais intuitivas para consulta de dados.
+
+<p align="center">
+  <img src="imagens/dreamcare-assistente.png" alt="Assistente DreamCare">
+</p>
+
+---
+
+# 📊 Impacto em tempo real
+
+A aplicação consulta a API para apresentar informações atualizadas sobre a base.
+
+Atualmente, a arquitetura integra:
+
+- PostgreSQL para armazenamento estruturado;
+- FastAPI para disponibilização dos dados;
+- Google Drive para localização das mídias;
+- aplicação web para interação com os usuários.
+
+Os indicadores não precisam ser mantidos manualmente na interface.
+
+---
+
+# 🏗️ Arquitetura
+
+```text
+                 GOOGLE DRIVE
+                      │
+                Fotos e vídeos
+                      │
+                      ▼
+             Integração de mídias
+                      │
+                      ▼
+PLANILHAS ─────► ETL Python/Pandas
+                      │
+                      ▼
+                 PostgreSQL
+                      │
+                      ▼
+                   FastAPI
+                      │
+                      ▼
+                Aplicação Web
+                      │
+        ┌─────────────┼──────────────┐
+        │             │              │
+        ▼             ▼              ▼
+     Central       Produção      Histórico
+        │
+        ▼
+   Sugestões
+   Editoriais
+        │
+        ▼
+   Assistente
+   DreamCare
 ```
 
 ---
 
-# 📸 Demonstração
+# 🛠️ Tecnologias
 
-## Interface Principal
+### Backend
 
-<p align="center">
-<img src="imagens/interface_principal.jpg">
-</p>
+- Python 3.12
+- FastAPI
+- PostgreSQL
+- Psycopg2
+- python-dotenv
 
----
+### Dados
 
-## Cadastro de Sonhos
+- Pandas
+- ETL
+- SQL
 
-<p align="center">
-<img src="imagens/cadastro_sonhos.jpg">
-</p>
+### Integrações
 
----
+- Google Drive API
 
-## Sincronização Automática
+### Frontend
 
-<p align="center">
-<img src="imagens/sincronizacao_terminal.jpg">
-</p>
+- HTML5
+- CSS3
+- JavaScript
 
----
+### MVP inicial
 
-## Banco PostgreSQL
+- Tkinter
 
-<p align="center">
-<img src="imagens/banco_postgresql.jpg">
-</p>
+### Desenvolvimento
 
----
-
-# 🛠 Tecnologias Utilizadas
-
-* Python
-* PostgreSQL
-* Pandas
-* Tkinter
-* Google Drive API
-* Psycopg2
-* python-dotenv
-* Git
-* GitHub
+- Git
+- GitHub
+- VS Code
 
 ---
 
-# 📂 Estrutura do Projeto
+# 🧠 Conceitos aplicados
+
+O projeto aplica conceitos de:
+
+- Engenharia de Software
+- Desenvolvimento Backend
+- Desenvolvimento Web
+- APIs REST
+- Banco de Dados Relacional
+- SQL
+- ETL
+- Automação de Processos
+- Integração de Sistemas
+- Manipulação de Dados
+- Regras de Negócio
+- Versionamento de Código
+- Desenvolvimento orientado a problemas reais
+
+---
+
+# 📂 Estrutura
 
 ```text
-DreamCare_Management_System
+DreamCare_Management_System/
 │
-├── app_sonhos.py
+├── api/
+│   └── main.py
+│
+├── desktop/
+│   └── app_sonhos.py
+│
+├── landing/
+│   ├── assets/
+│   ├── index.html
+│   ├── style.css
+│   ├── script.js
+│   ├── central.html
+│   ├── central.css
+│   ├── central.js
+│   ├── producao.html
+│   ├── producao.css
+│   ├── producao.js
+│   ├── historico.html
+│   ├── historico.css
+│   └── historico.js
+│
+├── imagens/
+│
 ├── google_drive.py
 ├── etl_sonhos.py
 ├── sincronizar_banco.py
-├── postgres_import.py
-│
-├── dados/
-├── imagens/
-├── logs/
-├── credentials/
-│
+├── vincular_drive.py
+├── requirements.txt
+├── .env.example
+├── .gitignore
 └── README.md
 ```
 
 ---
 
-# ▶️ Como Executar
+# 🔐 Segurança e privacidade
 
-## Clone o repositório
+Credenciais e informações sensíveis não devem ser armazenadas no repositório.
 
-```bash
-git clone https://github.com/Terezafigueiredo/DreamCare_Management_System.git
+O projeto utiliza `.gitignore` para impedir o versionamento de arquivos como:
+
+```text
+.env
+credentials/
+token.json
+token.pickle
+*.xlsx
+*.db
+.venv/
+__pycache__/
 ```
 
-## Instale as dependências
-
-```bash
-pip install -r requirements.txt
-```
-
-## Configure as variáveis de ambiente
-
-Crie um arquivo `.env` com as credenciais do PostgreSQL.
-
-Exemplo:
+O arquivo `.env.example` possui apenas valores demonstrativos:
 
 ```env
 DB_HOST=localhost
@@ -186,49 +397,117 @@ DB_PASSWORD=sua_senha
 DB_PORT=5432
 ```
 
-## Execute
+> Dados reais utilizados pelo Instituto Rope não fazem parte do repositório público.
+
+---
+
+# ⚙️ Executando o projeto
+
+## Clone o repositório
 
 ```bash
-python app_sonhos.py
+git clone https://github.com/Terezafigueiredo/DreamCare_Management_System.git
 ```
 
+Entre na pasta:
+
+```bash
+cd DreamCare_Management_System
+```
+
+Crie o ambiente virtual:
+
+```bash
+python -m venv .venv
+```
+
+No Windows:
+
+```bash
+.venv\Scripts\activate
+```
+
+Instale as dependências:
+
+```bash
+pip install -r requirements.txt
+```
+
+Configure o arquivo `.env` com base no `.env.example`.
+
 ---
 
-# 📈 Próximas Implementações
+# 🚀 Executando a API
 
-* Dashboard em Streamlit
-* Dashboard Power BI
-* API REST
-* Login de usuários
-* Controle de permissões
-* Relatórios em PDF
-* Backup automático
-* Deploy em nuvem
+```bash
+uvicorn api.main:app --reload
+```
+
+Durante o desenvolvimento, a API é executada localmente e disponibiliza os endpoints utilizados pela interface web.
 
 ---
 
-# 👩‍💻 Sobre a Desenvolvedora
+# 🌐 Executando o Frontend
+
+Durante o desenvolvimento local, a pasta `landing` pode ser executada através do **Live Server** no VS Code.
+
+A interface consome os dados disponibilizados pela API FastAPI.
+
+---
+
+# 📈 Status do projeto
+
+### MVP funcional em evolução
+
+- [x] ETL com Python e Pandas
+- [x] PostgreSQL
+- [x] MVP desktop com Tkinter
+- [x] Integração com Google Drive
+- [x] Mapeamento de fotos e vídeos
+- [x] API REST com FastAPI
+- [x] Interface web
+- [x] Painel principal
+- [x] Central de Conteúdo
+- [x] Pesquisa e filtros
+- [x] Sugestões editoriais
+- [x] Produção da Semana
+- [x] Fluxo de produção
+- [x] Tipos de conteúdo
+- [x] Histórico de publicações
+- [x] Assistente de consulta em linguagem simples
+
+---
+
+# 🔮 Próximas evoluções
+
+- [ ] Autenticação
+- [ ] Controle de usuários e permissões
+- [ ] Proteção de endpoints privados
+- [ ] Deploy do backend
+- [ ] Dashboard com novos indicadores
+- [ ] Métricas editoriais
+- [ ] Testes automatizados
+- [ ] Logs e monitoramento
+- [ ] Melhorias contínuas de acessibilidade
+- [ ] Expansão do Assistente DreamCare
+- [ ] Novas automações para apoio à produção
+
+---
+
+# 👩‍💻 Desenvolvedora
 
 **Tereza Cristina Silva Figueiredo**
 
-Estudante de Análise e Desenvolvimento de Sistemas, apaixonada por desenvolvimento de software, banco de dados, automação e análise de dados.
+Estudante de **Análise e Desenvolvimento de Sistemas**.
 
-Este projeto foi desenvolvido para aplicar conhecimentos em:
+O DreamCare foi desenvolvido a partir da identificação de um problema real e evolui conforme novas necessidades são observadas durante sua utilização.
 
-* Engenharia de Software
-* Python
-* ETL
-* PostgreSQL
-* Desktop Development
-* Integração de Sistemas
-* Organização de Projetos
-* Versionamento com Git
+O projeto reúne conhecimentos de desenvolvimento de software, dados, automação, banco de dados e integração de sistemas.
 
 ---
 
-# ⭐ Gostou do projeto?
+# 💜 Tecnologia com impacto social
 
-Se este projeto foi útil ou interessante para você, deixe uma ⭐ no repositório.
+O DreamCare demonstra como uma solução pode evoluir de uma planilha e um processo manual para uma arquitetura integrada de dados e software.
 
-Isso incentiva a continuidade do desenvolvimento e ajuda outras pessoas a encontrarem o projeto.
-
+Mais do que organizar registros, o objetivo é utilizar tecnologia para facilitar o trabalho de quem transforma sonhos em realidade.
