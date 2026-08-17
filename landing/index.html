@@ -1,121 +1,325 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>DreamCare Management System</title>
+    <title>DreamCare Management System</title>
 
-  <meta name="description" content="Sistema para gestão, automação e análise de sonhos realizados pelo Instituto Rope." />
+    <meta
+      name="description"
+      content="Sistema para gestão, automação e análise de sonhos realizados pelo Instituto Rope."
+    />
 
-  <link rel="stylesheet" href="style.css" />
-</head>
+    <link rel="stylesheet" href="style.css" />
+  </head>
 
-<body>
-  <a href="#conteudo" class="skip-link">Pular para o conteúdo</a>
+  <body>
+    <a href="#conteudo" class="skip-link"> Pular para o conteúdo </a>
 
-  <header class="header">
-    <img src="assets/logo.png" alt="Logo DreamCare" class="logo" />
+    <!-- ===================================== -->
+    <!-- HEADER -->
+    <!-- ===================================== -->
 
-    <nav aria-label="Menu principal">
-      <a href="#sobre">Sobre</a>
-      <a href="#metricas">Métricas</a>
-      <a href="#arquitetura">Arquitetura</a>
-      <a href="#tecnologias">Tecnologias</a>
-    </nav>
-  </header>
+    <header class="header">
+      <a
+        href="index.html"
+        class="logo-link"
+        aria-label="Página inicial DreamCare"
+      >
+        <img src="assets/logo.png" alt="Logo DreamCare" class="logo" />
+      </a>
 
-  <main id="conteudo">
-    <section class="hero">
-      <div class="hero-texto">
-        <span class="tag">Projeto de Tecnologia com Impacto Social</span>
+      <nav aria-label="Menu principal">
+        <a href="#painel"> Painel </a>
 
-        <h1>DreamCare Management System</h1>
+        <a href="central.html"> Central </a>
 
-        <p>
-          Sistema desenvolvido para automatizar a gestão de sonhos realizados pelo Instituto Rope,
-          integrando dados, banco PostgreSQL, API REST e interface web.
-        </p>
+        <a href="producao.html"> Produção </a>
 
-        <div class="botoes">
-          <a href="#metricas" class="btn primario">Ver métricas</a>
-          <a href="https://github.com/Terezafigueiredo/DreamCare_Management_System" class="btn secundario" target="_blank">
-            Ver GitHub
+        <a href="historico.html"> Histórico </a>
+
+        <a href="#sobre"> Sobre </a>
+      </nav>
+    </header>
+
+    <main id="conteudo">
+      <!-- ===================================== -->
+      <!-- HERO -->
+      <!-- ===================================== -->
+
+      <section class="hero">
+        <div class="hero-texto">
+          <span class="tag"> Tecnologia com Impacto Social </span>
+
+          <h1>DreamCare Management System</h1>
+
+          <p>
+            Uma plataforma para organizar sonhos, localizar fotos e vídeos no
+            Google Drive, planejar conteúdos e acompanhar o que já foi produzido
+            e publicado.
+          </p>
+
+          <div class="botoes">
+            <a href="central.html" class="btn primario">
+              Abrir Central de Conteúdo
+            </a>
+
+            <a href="producao.html" class="btn secundario">
+              Ver Produção da Semana
+            </a>
+          </div>
+        </div>
+
+        <div class="hero-imagem">
+          <img
+            src="assets/banner.jpg"
+            alt="Imagem visual representando o projeto DreamCare"
+          />
+        </div>
+      </section>
+
+      <!-- ===================================== -->
+      <!-- PAINEL OPERACIONAL -->
+      <!-- ===================================== -->
+
+      <section id="painel" class="painel" aria-labelledby="titulo-painel">
+        <div class="titulo-secao">
+          <div>
+            <span class="tag tag-painel"> Gestão Editorial </span>
+
+            <h2 id="titulo-painel">Visão geral</h2>
+
+            <p>
+              Acompanhe rapidamente o fluxo de produção dos conteúdos do
+              DreamCare.
+            </p>
+          </div>
+        </div>
+
+        <!-- INDICADORES -->
+
+        <div class="grid-indicadores">
+          <a href="producao.html" class="card-indicador">
+            <span> Fila da semana </span>
+
+            <strong id="total-fila"> 0 </strong>
+
+            <small> conteúdos selecionados </small>
+          </a>
+
+          <a href="producao.html" class="card-indicador">
+            <span> Em edição </span>
+
+            <strong id="total-edicao"> 0 </strong>
+
+            <small> conteúdos em andamento </small>
+          </a>
+
+          <a href="producao.html" class="card-indicador">
+            <span> Prontos para postar </span>
+
+            <strong id="total-prontos"> 0 </strong>
+
+            <small> aguardando publicação </small>
+          </a>
+
+          <a href="historico.html" class="card-indicador">
+            <span> Publicados </span>
+
+            <strong id="total-publicados"> 0 </strong>
+
+            <small> histórico registrado </small>
           </a>
         </div>
-      </div>
 
-      <div class="hero-imagem">
-        <img src="assets/banner.jpg" alt="Imagem visual representando o projeto DreamCare" />
-      </div>
-    </section>
+        <!-- ATALHOS -->
 
-    <section id="metricas" class="metricas" aria-labelledby="titulo-metricas">
-      <h2 id="titulo-metricas">Impacto em tempo real</h2>
+        <div class="grid-acoes">
+          <a href="central.html" class="card-acao">
+            <div class="icone-acao">🔎</div>
 
-      <div class="grid-metricas">
-        <article class="card-metrica">
-          <strong id="total-sonhos">0</strong>
-          <span>sonhos cadastrados</span>
-        </article>
+            <div>
+              <h3>Central de Conteúdo</h3>
 
-        <article class="card-metrica">
-          <strong>PostgreSQL</strong>
-          <span>banco de dados</span>
-        </article>
+              <p>Pesquise sonhos por idade, faixa etária, fotos e vídeos.</p>
 
-        <article class="card-metrica">
-          <strong>FastAPI</strong>
-          <span>API REST</span>
-        </article>
+              <span class="link-acao"> Abrir Central → </span>
+            </div>
+          </a>
 
-        <article class="card-metrica">
-          <strong>ETL</strong>
-          <span>tratamento de dados</span>
-        </article>
-      </div>
-    </section>
+          <a href="producao.html" class="card-acao">
+            <div class="icone-acao">🎬</div>
 
-    <section id="sobre" class="secao">
-      <h2>Sobre o projeto</h2>
-      <p>
-        O DreamCare foi criado para organizar, consultar e analisar informações sobre sonhos realizados,
-        transformando planilhas em dados estruturados e acessíveis para tomada de decisão.
-      </p>
-    </section>
+            <div>
+              <h3>Produção da Semana</h3>
 
-    <section id="arquitetura" class="secao">
-      <h2>Arquitetura</h2>
+              <p>
+                Acompanhe o que está na fila, em edição ou pronto para postar.
+              </p>
 
-      <div class="fluxo">
-        <span>Google Drive</span>
-        <span>ETL</span>
-        <span>PostgreSQL</span>
-        <span>FastAPI</span>
-        <span>Landing Page</span>
-      </div>
-    </section>
+              <span class="link-acao"> Ver produção → </span>
+            </div>
+          </a>
 
-    <section id="tecnologias" class="secao">
-      <h2>Tecnologias utilizadas</h2>
+          <a href="central.html" class="card-acao">
+            <div class="icone-acao">✨</div>
 
-      <div class="tecnologias">
-        <span>Python</span>
-        <span>FastAPI</span>
-        <span>PostgreSQL</span>
-        <span>Pandas</span>
-        <span>Tkinter</span>
-        <span>HTML</span>
-        <span>CSS</span>
-        <span>JavaScript</span>
-      </div>
-    </section>
-  </main>
+            <div>
+              <h3>Sugestões da Semana</h3>
 
-  <footer class="footer">
-    <p>DreamCare Management System — Tecnologia para impacto social.</p>
-  </footer>
+              <p>
+                Veja sonhos com boa disponibilidade de fotos e vídeos para novos
+                conteúdos.
+              </p>
 
-  <script src="script.js"></script>
-</body>
+              <span class="link-acao"> Ver sugestões → </span>
+            </div>
+          </a>
+
+          <a href="historico.html" class="card-acao">
+            <div class="icone-acao">✅</div>
+
+            <div>
+              <h3>Histórico</h3>
+
+              <p>Consulte conteúdos publicados e evite repetir sonhos.</p>
+
+              <span class="link-acao"> Abrir histórico → </span>
+            </div>
+          </a>
+        </div>
+      </section>
+      <section class="assistente">
+        <div class="assistente-cabecalho">
+          <div>
+            <span class="tag">Assistente DreamCare</span>
+
+            <h2>Pergunte ao DreamCare</h2>
+
+            <p>Pesquise os sonhos usando linguagem simples.</p>
+          </div>
+        </div>
+
+        <div class="assistente-box">
+          <input
+            type="text"
+            id="pergunta-dreamcare"
+            placeholder="Ex.: crianças abaixo de 10 anos com fotos e vídeos"
+          />
+
+          <button type="button" id="botao-perguntar" class="btn primario">
+            Buscar
+          </button>
+        </div>
+
+        <div id="resposta-assistente" class="resposta-assistente">
+          Digite uma pergunta para começar.
+        </div>
+
+        <div id="resultados-assistente" class="resultados-assistente"></div>
+      </section>
+
+      <!-- ===================================== -->
+      <!-- MÉTRICAS -->
+      <!-- ===================================== -->
+
+      <section id="metricas" class="metricas" aria-labelledby="titulo-metricas">
+        <h2 id="titulo-metricas">Impacto em tempo real</h2>
+
+        <div class="grid-metricas">
+          <article class="card-metrica">
+            <strong id="total-sonhos"> 0 </strong>
+
+            <span> sonhos cadastrados </span>
+          </article>
+
+          <article class="card-metrica">
+            <strong> PostgreSQL </strong>
+
+            <span> banco de dados </span>
+          </article>
+
+          <article class="card-metrica">
+            <strong> FastAPI </strong>
+
+            <span> API REST </span>
+          </article>
+
+          <article class="card-metrica">
+            <strong> Google Drive </strong>
+
+            <span> integração de mídias </span>
+          </article>
+        </div>
+      </section>
+
+      <!-- ===================================== -->
+      <!-- SOBRE -->
+      <!-- ===================================== -->
+
+      <section id="sobre" class="secao">
+        <h2>Sobre o projeto</h2>
+
+        <p>
+          O DreamCare foi criado para transformar informações dispersas em
+          planilhas e pastas do Google Drive em uma estrutura organizada,
+          pesquisável e útil para a gestão e produção de conteúdo do Instituto
+          Rope.
+        </p>
+      </section>
+
+      <!-- ===================================== -->
+      <!-- ARQUITETURA -->
+      <!-- ===================================== -->
+
+      <section id="arquitetura" class="secao">
+        <h2>Arquitetura</h2>
+
+        <div class="fluxo">
+          <span> Google Drive </span>
+
+          <span> ETL </span>
+
+          <span> PostgreSQL </span>
+
+          <span> FastAPI </span>
+
+          <span> Central de Conteúdo </span>
+        </div>
+      </section>
+
+      <!-- ===================================== -->
+      <!-- TECNOLOGIAS -->
+      <!-- ===================================== -->
+
+      <section id="tecnologias" class="secao">
+        <h2>Tecnologias utilizadas</h2>
+
+        <div class="tecnologias">
+          <span> Python </span>
+
+          <span> FastAPI </span>
+
+          <span> PostgreSQL </span>
+
+          <span> Pandas </span>
+
+          <span> Google Drive API </span>
+
+          <span> HTML </span>
+
+          <span> CSS </span>
+
+          <span> JavaScript </span>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>DreamCare Management System — Tecnologia para impacto social.</p>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
 </html>

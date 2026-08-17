@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>DreamCare | Histórico de Publicados</title>
+
+    <link rel="stylesheet" href="historico.css" />
+  </head>
+
+  <body>
+    <header class="topo">
+      <div class="topo-conteudo">
+        <div>
+          <p class="marca">DREAMCARE</p>
+
+          <h1>Histórico de Publicados</h1>
+
+          <p class="subtitulo">
+            Consulte os conteúdos já publicados e evite repetir sonhos.
+          </p>
+        </div>
+
+        <div class="topo-acoes">
+          <a href="producao.html" class="botao-topo"> ← Produção </a>
+
+          <a href="central.html" class="botao-topo"> Central de Conteúdo </a>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="filtros">
+        <div class="campo">
+          <label for="ano"> Ano de publicação </label>
+
+          <input type="number" id="ano" placeholder="Ex.: 2026" />
+        </div>
+
+        <div class="campo">
+          <label for="tipo"> Tipo de conteúdo </label>
+
+          <select id="tipo">
+            <option value="">Todos</option>
+
+            <option value="REEL">Reel</option>
+
+            <option value="CARROSSEL">Carrossel</option>
+
+            <option value="STORY">Story</option>
+
+            <option value="POST">Post</option>
+          </select>
+        </div>
+
+        <button type="button" id="botao-buscar" class="botao-principal">
+          Buscar
+        </button>
+      </section>
+
+      <section class="resumo">
+        <div>
+          <span> Conteúdos publicados </span>
+
+          <strong id="total"> 0 </strong>
+        </div>
+      </section>
+
+      <div id="mensagem" class="mensagem">Carregando histórico...</div>
+
+      <section id="lista" class="lista"></section>
+    </main>
+
+    <script src="historico.js"></script>
+  </body>
+</html>

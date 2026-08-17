@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>DreamCare | Produção de Conteúdo</title>
+
+    <link rel="stylesheet" href="producao.css" />
+  </head>
+
+  <body>
+    <header class="topo">
+      <div class="topo-conteudo">
+        <div>
+          <p class="marca">DREAMCARE</p>
+
+          <h1>Produção de Conteúdo</h1>
+
+          <p class="subtitulo">
+            Organize os conteúdos da semana, acompanhe o que está em edição e
+            controle o que já foi publicado.
+          </p>
+        </div>
+
+        <div class="topo-acoes">
+          <a href="central.html" class="botao-topo"> ← Central de Conteúdo </a>
+
+          <a href="index.html" class="botao-topo"> Início </a>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <!-- RESUMO -->
+
+      <section class="resumo">
+        <div class="resumo-card">
+          <span>Fila da semana</span>
+          <strong id="total-a-fazer">0</strong>
+        </div>
+
+        <div class="resumo-card">
+          <span>Em edição</span>
+          <strong id="total-em-producao">0</strong>
+        </div>
+
+        <div class="resumo-card">
+          <span>Pronto para postar</span>
+          <strong id="total-pronto">0</strong>
+        </div>
+
+        <div class="resumo-card">
+          <span>Publicado</span>
+          <strong id="total-publicado">0</strong>
+        </div>
+      </section>
+
+      <!-- STATUS -->
+
+      <div id="mensagem" class="mensagem">Carregando produção...</div>
+
+      <!-- KANBAN -->
+
+      <section class="kanban">
+        <!-- FILA DA SEMANA -->
+
+        <div class="coluna">
+          <div class="coluna-topo">
+            <h2>Fila da Semana</h2>
+
+            <span class="contador" id="contador-a-fazer"> 0 </span>
+          </div>
+
+          <div class="lista-cards" id="lista-a-fazer"></div>
+        </div>
+
+        <!-- EM EDIÇÃO -->
+
+        <div class="coluna">
+          <div class="coluna-topo">
+            <h2>Em Edição</h2>
+
+            <span class="contador" id="contador-em-producao"> 0 </span>
+          </div>
+
+          <div class="lista-cards" id="lista-em-producao"></div>
+        </div>
+
+        <!-- PRONTO -->
+
+        <div class="coluna">
+          <div class="coluna-topo">
+            <h2>Pronto para Postar</h2>
+
+            <span class="contador" id="contador-pronto"> 0 </span>
+          </div>
+
+          <div class="lista-cards" id="lista-pronto"></div>
+        </div>
+
+        <!-- PUBLICADO -->
+
+        <div class="coluna">
+          <div class="coluna-topo">
+            <h2>Publicado</h2>
+
+            <span class="contador" id="contador-publicado"> 0 </span>
+          </div>
+
+          <div class="lista-cards" id="lista-publicado"></div>
+        </div>
+      </section>
+    </main>
+
+    <script src="producao.js"></script>
+  </body>
+</html>

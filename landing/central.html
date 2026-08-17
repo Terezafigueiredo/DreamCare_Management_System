@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>DreamCare | Central de Conteúdo</title>
+
+    <link rel="stylesheet" href="central.css" />
+  </head>
+
+  <body>
+    <header class="topo">
+      <div class="topo-conteudo">
+        <div>
+          <p class="marca">DREAMCARE</p>
+
+          <h1>Central de Conteúdo</h1>
+
+          <p class="subtitulo">
+            Encontre sonhos com fotos e vídeos disponíveis para produção de
+            conteúdo.
+          </p>
+        </div>
+
+        <a href="index.html" class="botao-voltar"> ← Voltar </a>
+      </div>
+    </header>
+
+    <main class="container">
+      <!-- ================================= -->
+      <!-- FILTROS -->
+      <!-- ================================= -->
+      <section class="sugestoes-semana">
+        <div class="sugestoes-cabecalho">
+          <div>
+            <p class="sugestoes-label">✨ Sugestões para esta semana</p>
+
+            <h2>Conteúdos com bom potencial editorial</h2>
+
+            <p>
+              Selecionados automaticamente pelo DreamCare com base em fotos,
+              vídeos e disponibilidade.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            id="botao-atualizar-sugestoes"
+            class="botao-secundario"
+          >
+            Atualizar sugestões
+          </button>
+        </div>
+
+        <div id="lista-sugestoes" class="lista-sugestoes">
+          <div class="mensagem-sugestoes">Carregando sugestões...</div>
+        </div>
+      </section>
+      <section class="painel-filtros">
+        <div class="campo campo-busca">
+          <label for="busca"> Pesquisar </label>
+
+          <input
+            type="text"
+            id="busca"
+            placeholder="Nome, sonho, enfermidade ou idealizador"
+          />
+        </div>
+
+        <div class="linha-filtros">
+          <div class="campo">
+            <label for="idade-maxima"> Idade máxima </label>
+
+            <input
+              type="number"
+              id="idade-maxima"
+              min="0"
+              max="120"
+              placeholder="Ex.: 9"
+            />
+          </div>
+
+          <div class="campo">
+            <label for="faixa-etaria"> Faixa etária </label>
+
+            <select id="faixa-etaria">
+              <option value="">Todas</option>
+
+              <option value="CRIANCA">Criança</option>
+
+              <option value="ADOLESCENTE">Adolescente</option>
+
+              <option value="ADULTO">Adulto</option>
+            </select>
+          </div>
+
+          <div class="campo-checkbox">
+            <label>
+              <input type="checkbox" id="tem-fotos" />
+
+              Com fotos
+            </label>
+          </div>
+
+          <div class="campo-checkbox">
+            <label>
+              <input type="checkbox" id="tem-videos" />
+
+              Com vídeos
+            </label>
+          </div>
+        </div>
+
+        <div class="acoes-filtros">
+          <button type="button" id="botao-limpar" class="botao-secundario">
+            Limpar
+          </button>
+
+          <button type="button" id="botao-buscar" class="botao-principal">
+            Buscar sonhos
+          </button>
+        </div>
+      </section>
+
+      <!-- ================================= -->
+      <!-- RESUMO -->
+      <!-- ================================= -->
+
+      <section class="resumo">
+        <div>
+          <p>Resultados encontrados</p>
+
+          <strong id="total-resultados"> 0 </strong>
+        </div>
+
+        <div>
+          <p>Status</p>
+
+          <strong id="status-consulta"> Aguardando busca </strong>
+        </div>
+      </section>
+
+      <!-- ================================= -->
+      <!-- MENSAGEM -->
+      <!-- ================================= -->
+
+      <div id="mensagem" class="mensagem">
+        Use os filtros acima para encontrar sonhos.
+      </div>
+
+      <!-- ================================= -->
+      <!-- RESULTADOS -->
+      <!-- ================================= -->
+
+      <section id="lista-resultados" class="lista-resultados"></section>
+    </main>
+
+    <script src="central.js"></script>
+  </body>
+</html>

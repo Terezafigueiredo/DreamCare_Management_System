@@ -1,21 +1,78 @@
-# Variáveis de ambiente
+# =========================
+# VARIÁVEIS DE AMBIENTE
+# =========================
 .env
+.env.*
 
-# Ambiente virtual
+# Permitir exemplo seguro
+!.env.example
+
+
+# =========================
+# AMBIENTE VIRTUAL
+# =========================
 .venv/
 venv/
+env/
 
-# Cache do Python
+
+# =========================
+# CACHE PYTHON
+# =========================
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 
-# Banco SQLite
+
+# =========================
+# IDE / SISTEMA
+# =========================
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+
+# =========================
+# BANCO / DADOS LOCAIS
+# =========================
 *.db
+*.sqlite
+*.sqlite3
 
-# Planilhas
+
+# =========================
+# PLANILHAS / DADOS REAIS
+# =========================
 *.xlsx
+*.xls
+*.csv
 
-# Credenciais do Google
+dados/
+relatorios/
+
+
+# =========================
+# GOOGLE
+# =========================
 credentials/
+credentials.json
+client_secret*.json
+
 token.json
 token.pickle
+
+
+# =========================
+# LOGS
+# =========================
+*.log
+
+
+# =========================
+# ARQUIVOS TEMPORÁRIOS
+# =========================
+*.tmp
+*.temp
+~$*
