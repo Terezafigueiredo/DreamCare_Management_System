@@ -38,6 +38,11 @@ class ResultadoEdicao:
     quantidade_trechos: int
 
 
+def _chave_ordem_natural(nome):
+    """Extrai a sequência numérica do nome para preservar a cronologia dos arquivos."""
+    return tuple(int(numero) for numero in re.findall(r"\d+", Path(nome).stem))
+
+
 def _listar_videos(service, pasta_id):
     """Lista somente os vídeos diretamente contidos na pasta, na ordem do Drive."""
     pasta = service.files().get(fileId=pasta_id, fields="id,name").execute()
@@ -62,6 +67,10 @@ def _listar_videos(service, pasta_id):
         token = resposta.get("nextPageToken")
         if not token:
             break
+    videos.sort(
+        key=lambda arquivo: _chave_ordem_natural(arquivo["name"]),
+        reverse=True,
+    )
     for posicao, arquivo in enumerate(videos, start=1):
         arquivo["posicao_original"] = posicao
     return videos
