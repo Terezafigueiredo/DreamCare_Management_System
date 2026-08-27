@@ -5,8 +5,11 @@ from googleapiclient.http import MediaIoBaseDownload
 import io
 import os
 import pickle
+import truststore
 from dotenv import load_dotenv
 
+
+truststore.inject_into_ssl()
 
 load_dotenv()
 
