@@ -45,6 +45,16 @@ def main():
 
                 data_publicacao DATE,
 
+                edicao_status VARCHAR(30)
+                    DEFAULT 'NAO_INICIADA',
+
+                video_editado_path TEXT,
+                video_publico_url TEXT,
+                legenda_instagram TEXT,
+                erro_automacao TEXT,
+                instagram_media_id TEXT,
+                data_autorizacao TIMESTAMP,
+
                 CONSTRAINT fk_producao_sonho
                     FOREIGN KEY (sonho_id)
                     REFERENCES sonhos(id)

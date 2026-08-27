@@ -211,6 +211,79 @@ h1 {
   background: var(--branco);
 }
 
+.automacao-social {
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 12px;
+  padding: 11px;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  background: #fbf9fd;
+}
+
+.automacao-social label {
+  color: var(--roxo-escuro);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.legenda-instagram {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  padding: 9px;
+  font: inherit;
+}
+
+.previa-video {
+  width: 100%;
+  max-height: 320px;
+  border-radius: 9px;
+  background: #111;
+}
+
+.status-automacao {
+  color: var(--texto-suave);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.resumo-edicao {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.resumo-edicao span {
+  padding: 5px 7px;
+  border-radius: 999px;
+  background: var(--branco);
+  color: var(--roxo-escuro);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.link-relatorio {
+  color: var(--roxo-escuro);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.status-erro {
+  color: #b42318;
+}
+
+.botao-editar-video {
+  background: #ece4f7;
+  color: var(--roxo-escuro);
+}
+
+.botao-instagram {
+  background: linear-gradient(90deg, #833ab4, #e1306c, #f77737);
+  color: var(--branco);
+}
+
 .card-acoes {
   display: grid;
   gap: 8px;

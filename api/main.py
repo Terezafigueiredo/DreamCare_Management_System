@@ -1,10 +1,14 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from pathlib import Path
+import json
 import psycopg2
 import os
+
+from api.automacao_social import preparar_reel, publicar_reel
 
 
 # =========================================================
@@ -34,6 +38,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+PASTA_MEDIA = BASE_DIR / "landing" / "media"
+PASTA_MEDIA.mkdir(parents=True, exist_ok=True)
+app.mount("/media", StaticFiles(directory=PASTA_MEDIA), name="media")
+
 
 # =========================================================
 # MODELOS
@@ -47,6 +55,16 @@ class ProducaoAtualizacao(BaseModel):
     status: str | None = None
     tipo_conteudo: str | None = None
     observacoes: str | None = None
+
+
+class PrepararVideoEntrada(BaseModel):
+    legenda: str = ""
+    duracao_maxima: int = 60
+
+
+class PublicarInstagramEntrada(BaseModel):
+    confirmar_publicacao: bool = False
+    video_publico_url: str | None = None
 
 # =========================================================
 # BANCO
@@ -530,7 +548,13 @@ def listar_producao(
                 p.observacoes,
                 p.data_criacao,
                 p.data_atualizacao,
-                p.data_publicacao
+                p.data_publicacao,
+                p.edicao_status,
+                p.video_editado_path,
+                p.video_publico_url,
+                p.legenda_instagram,
+                p.erro_automacao,
+                p.instagram_media_id
 
             FROM producao_conteudo p
 
@@ -605,6 +629,35 @@ def listar_producao(
             else:
 
                 item["drive_url"] = None
+
+            if item.get("video_editado_path"):
+                caminho_video = Path(item["video_editado_path"])
+                item["video_preview_url"] = (
+                    "/media/editados/"
+                    + caminho_video.name
+                )
+                caminho_relatorio = caminho_video.with_suffix(".json")
+                item["relatorio_edicao_url"] = (
+                    "/media/editados/" + caminho_relatorio.name
+                    if caminho_relatorio.exists()
+                    else None
+                )
+                if caminho_relatorio.exists():
+                    try:
+                        relatorio = json.loads(
+                            caminho_relatorio.read_text(encoding="utf-8")
+                        )
+                        item["resumo_edicao"] = {
+                            "duracao_segundos": relatorio.get("duracao_segundos"),
+                            "videos_utilizados": relatorio.get("videos_utilizados"),
+                            "trechos_utilizados": relatorio.get("trechos_utilizados"),
+                        }
+                    except (OSError, ValueError):
+                        item["resumo_edicao"] = None
+            else:
+                item["video_preview_url"] = None
+                item["relatorio_edicao_url"] = None
+                item["resumo_edicao"] = None
 
             resultados.append(
                 item
@@ -774,6 +827,146 @@ def atualizar_producao(
 
         cursor.close()
         conexao.close()
+def executar_edicao_video(producao_id, drive_folder_id, duracao_maxima):
+    conexao = conectar()
+    cursor = conexao.cursor()
+    try:
+        resultado = preparar_reel(drive_folder_id, producao_id, duracao_maxima)
+        cursor.execute("""
+            UPDATE producao_conteudo
+            SET edicao_status = 'AGUARDANDO_APROVACAO',
+                video_editado_path = %s,
+                video_publico_url = %s,
+                erro_automacao = NULL,
+                status = 'PRONTO_PARA_POSTAR',
+                tipo_conteudo = 'REEL',
+                data_atualizacao = CURRENT_TIMESTAMP
+            WHERE id = %s
+        """, (str(resultado.caminho), None, producao_id))
+        conexao.commit()
+    except Exception as erro:
+        conexao.rollback()
+        cursor.execute("""
+            UPDATE producao_conteudo
+            SET edicao_status = 'ERRO',
+                erro_automacao = %s,
+                data_atualizacao = CURRENT_TIMESTAMP
+            WHERE id = %s
+        """, (str(erro)[:3000], producao_id))
+        conexao.commit()
+    finally:
+        cursor.close()
+        conexao.close()
+
+
+@app.post("/producao/{producao_id}/preparar-video")
+def solicitar_edicao_video(
+    producao_id: int,
+    entrada: PrepararVideoEntrada,
+    tarefas: BackgroundTasks,
+):
+    conexao = conectar()
+    cursor = conexao.cursor()
+    try:
+        cursor.execute("""
+            SELECT s.drive_folder_id
+            FROM producao_conteudo p
+            INNER JOIN sonhos s ON s.id = p.sonho_id
+            WHERE p.id = %s
+        """, (producao_id,))
+        registro = cursor.fetchone()
+        if not registro:
+            raise HTTPException(status_code=404, detail="Produção não encontrada.")
+        if not registro[0]:
+            raise HTTPException(status_code=400, detail="Esta produção não possui pasta no Drive.")
+
+        cursor.execute("""
+            UPDATE producao_conteudo
+            SET edicao_status = 'PROCESSANDO',
+                legenda_instagram = %s,
+                erro_automacao = NULL,
+                status = 'EM_PRODUCAO',
+                tipo_conteudo = 'REEL',
+                data_atualizacao = CURRENT_TIMESTAMP
+            WHERE id = %s
+        """, (entrada.legenda.strip(), producao_id))
+        conexao.commit()
+        tarefas.add_task(
+            executar_edicao_video,
+            producao_id,
+            registro[0],
+            entrada.duracao_maxima,
+        )
+        return {"mensagem": "Edição iniciada.", "producao_id": producao_id}
+    except HTTPException:
+        conexao.rollback()
+        raise
+    finally:
+        cursor.close()
+        conexao.close()
+
+
+@app.post("/producao/{producao_id}/publicar-instagram")
+def autorizar_publicacao_instagram(
+    producao_id: int,
+    entrada: PublicarInstagramEntrada,
+):
+    if not entrada.confirmar_publicacao:
+        raise HTTPException(
+            status_code=400,
+            detail="A publicação exige autorização explícita.",
+        )
+
+    conexao = conectar()
+    cursor = conexao.cursor()
+    try:
+        cursor.execute("""
+            SELECT edicao_status, video_publico_url, legenda_instagram, status
+            FROM producao_conteudo
+            WHERE id = %s
+            FOR UPDATE
+        """, (producao_id,))
+        registro = cursor.fetchone()
+        if not registro:
+            raise HTTPException(status_code=404, detail="Produção não encontrada.")
+        edicao_status, url_salva, legenda, status = registro
+        if edicao_status != "AGUARDANDO_APROVACAO" or status != "PRONTO_PARA_POSTAR":
+            raise HTTPException(status_code=409, detail="O vídeo ainda não está pronto para publicar.")
+
+        video_url = entrada.video_publico_url or url_salva
+        if not video_url or not video_url.startswith("https://"):
+            raise HTTPException(
+                status_code=400,
+                detail="Informe uma URL pública HTTPS do vídeo ou configure PUBLIC_MEDIA_BASE_URL.",
+            )
+
+        media_id = publicar_reel(video_url, legenda or "")
+        cursor.execute("""
+            UPDATE producao_conteudo
+            SET status = 'PUBLICADO',
+                instagram_media_id = %s,
+                video_publico_url = %s,
+                data_autorizacao = CURRENT_TIMESTAMP,
+                data_publicacao = CURRENT_DATE,
+                data_atualizacao = CURRENT_TIMESTAMP
+            WHERE id = %s
+        """, (media_id, video_url, producao_id))
+        conexao.commit()
+        return {
+            "mensagem": "Reel publicado no Instagram.",
+            "instagram_media_id": media_id,
+        }
+    except HTTPException:
+        conexao.rollback()
+        raise
+    except Exception as erro:
+        conexao.rollback()
+        raise HTTPException(status_code=502, detail=str(erro))
+    finally:
+        cursor.close()
+        conexao.close()
+
+
 @app.get("/sugestoes-semana")
 def sugestoes_semana(
     limite: int = 3,

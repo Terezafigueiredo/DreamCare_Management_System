@@ -1,4 +1,6 @@
 const API_PRODUCAO = "http://127.0.0.1:8000/producao";
+const API_BASE = "http://127.0.0.1:8000";
+const PUBLICACAO_INSTAGRAM_ATIVA = false;
 
 const mensagem = document.getElementById("mensagem");
 
@@ -58,7 +60,7 @@ function textoBotao(status) {
   const textos = {
     A_FAZER: "Começar edição",
     EM_PRODUCAO: "Finalizar edição",
-    PRONTO_PARA_POSTAR: "Marcar como publicado",
+    PRONTO_PARA_POSTAR: "Registrar publicação manual",
   };
 
   return textos[status] || "";
@@ -150,6 +152,57 @@ function criarCard(item) {
 
     </select>
 
+    <div class="automacao-social">
+      <label for="legenda-${item.producao_id}">Legenda do Instagram</label>
+      <textarea
+        id="legenda-${item.producao_id}"
+        class="legenda-instagram"
+        rows="3"
+        placeholder="Escreva a legenda que será revisada antes da publicação"
+      >${item.legenda_instagram || ""}</textarea>
+
+      ${
+        item.edicao_status === "AGUARDANDO_APROVACAO"
+          ? `<video class="previa-video" controls preload="metadata"
+               src="${API_BASE}${item.video_preview_url}"></video>`
+          : ""
+      }
+
+      ${
+        item.resumo_edicao
+          ? `<div class="resumo-edicao">
+               <span>${Number(item.resumo_edicao.duracao_segundos || 0).toFixed(1)}s</span>
+               <span>${item.resumo_edicao.videos_utilizados || 0} vídeos</span>
+               <span>${item.resumo_edicao.trechos_utilizados || 0} trechos</span>
+             </div>
+             <a class="link-relatorio" href="${API_BASE}${item.relatorio_edicao_url}"
+                target="_blank" rel="noopener noreferrer">Ver relatório JSON</a>`
+          : ""
+      }
+
+      <p class="status-automacao ${item.edicao_status === "ERRO" ? "status-erro" : ""}">
+        ${textoStatusEdicao(item)}
+      </p>
+
+      ${
+        item.status !== "PUBLICADO" && item.edicao_status !== "PROCESSANDO"
+          ? `<button type="button" class="botao-card botao-editar-video">
+               ${item.edicao_status === "AGUARDANDO_APROVACAO" ? "Refazer edição automática" : "Preparar vídeo automaticamente"}
+             </button>`
+          : ""
+      }
+
+      ${
+        PUBLICACAO_INSTAGRAM_ATIVA &&
+        item.edicao_status === "AGUARDANDO_APROVACAO" &&
+        item.status === "PRONTO_PARA_POSTAR"
+          ? `<button type="button" class="botao-card botao-instagram">
+               Autorizar e publicar no Instagram
+             </button>`
+          : ""
+      }
+    </div>
+
     <div class="card-acoes">
 
       <a
@@ -218,10 +271,59 @@ function criarCard(item) {
     }
   });
 
+  const botaoEditar = card.querySelector(".botao-editar-video");
+  if (botaoEditar) {
+    botaoEditar.addEventListener("click", async () => {
+      const legenda = card.querySelector(".legenda-instagram").value;
+      botaoEditar.disabled = true;
+      botaoEditar.textContent = "Iniciando edição...";
+      try {
+        await chamarAutomacao(`${API_PRODUCAO}/${item.producao_id}/preparar-video`, {
+          legenda,
+          duracao_maxima: 60,
+        });
+        await carregarProducao();
+      } catch (erro) {
+        botaoEditar.disabled = false;
+        botaoEditar.textContent = "Preparar vídeo automaticamente";
+      }
+    });
+  }
+
+  const botaoInstagram = card.querySelector(".botao-instagram");
+  if (botaoInstagram) {
+    botaoInstagram.addEventListener("click", async () => {
+      const autorizou = confirm(
+        "Você revisou o vídeo e a legenda? Ao continuar, o Reel será publicado no Instagram."
+      );
+      if (!autorizou) return;
+
+      botaoInstagram.disabled = true;
+      botaoInstagram.textContent = "Publicando...";
+      try {
+        await chamarAutomacao(
+          `${API_PRODUCAO}/${item.producao_id}/publicar-instagram`,
+          { confirmar_publicacao: true }
+        );
+        alert("Reel publicado no Instagram com sucesso.");
+        await carregarProducao();
+      } catch (erro) {
+        botaoInstagram.disabled = false;
+        botaoInstagram.textContent = "Autorizar e publicar no Instagram";
+      }
+    });
+  }
+
   const botaoAvancar = card.querySelector(".botao-avancar");
 
   if (botaoAvancar) {
     botaoAvancar.addEventListener("click", async () => {
+      if (
+        botaoAvancar.dataset.status === "PUBLICADO" &&
+        !confirm("Confirma que este conteúdo já foi publicado manualmente?")
+      ) {
+        return;
+      }
       botaoAvancar.disabled = true;
       botaoAvancar.textContent = "Atualizando...";
 
@@ -259,6 +361,30 @@ function criarCard(item) {
   }
 
   return card;
+}
+
+function textoStatusEdicao(item) {
+  const textos = {
+    NAO_INICIADA: "A edição automática ainda não foi iniciada.",
+    PROCESSANDO: "Editando os vídeos da pasta. A página pode ser atualizada.",
+    AGUARDANDO_APROVACAO: "Prévia pronta e aguardando aprovação.",
+    ERRO: `Falha na edição: ${item.erro_automacao || "erro não informado"}`,
+  };
+  return textos[item.edicao_status] || textos.NAO_INICIADA;
+}
+
+async function chamarAutomacao(url, dados) {
+  const resposta = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(dados),
+  });
+  const retorno = await resposta.json();
+  if (!resposta.ok) {
+    alert(retorno.detail || "Não foi possível executar a automação.");
+    throw new Error(retorno.detail || `Erro HTTP ${resposta.status}`);
+  }
+  return retorno;
 }
 
 async function carregarProducao() {
@@ -346,3 +472,9 @@ async function atualizarProducao(producaoId, dados) {
 }
 
 carregarProducao();
+
+setInterval(() => {
+  if (document.visibilityState === "visible") {
+    carregarProducao();
+  }
+}, 15000);
