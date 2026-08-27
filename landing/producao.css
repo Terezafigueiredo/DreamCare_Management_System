@@ -284,6 +284,177 @@ h1 {
   color: var(--branco);
 }
 
+.botao-revisar-trechos {
+  background: var(--branco);
+  color: var(--roxo-escuro);
+  border: 1px solid var(--roxo);
+}
+
+.revisao-trechos {
+  display: grid;
+  gap: 10px;
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--borda);
+}
+
+.revisao-trechos[hidden] {
+  display: none;
+}
+
+.revisao-trechos h4 {
+  color: var(--roxo-escuro);
+  font-size: 15px;
+}
+
+.revisao-ajuda,
+.alternativas-trecho small {
+  color: var(--texto-suave);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.lista-trechos-revisao {
+  display: grid;
+  gap: 10px;
+}
+
+.trecho-revisao {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--borda);
+  border-radius: 9px;
+  background: var(--branco);
+}
+
+.trecho-cabecalho,
+.metadados-trecho,
+.acoes-trecho {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.trecho-cabecalho {
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+.previa-trecho {
+  width: 100%;
+  max-height: 230px;
+  border-radius: 7px;
+  background: #111;
+}
+
+.campos-trecho {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.tempo-atual {
+  color: var(--texto-suave);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.marcadores-trecho {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.marcadores-trecho button,
+.previsualizar-selecao {
+  border: none;
+  border-radius: 7px;
+  padding: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.marcadores-trecho button {
+  background: var(--roxo-claro);
+  color: var(--roxo-escuro);
+}
+
+.selecao-visual {
+  display: grid;
+  gap: 3px;
+  padding: 8px;
+  border-radius: 7px;
+  background: #f7f5f9;
+  color: var(--texto-suave);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.selecao-visual strong {
+  color: var(--texto);
+}
+
+.previsualizar-selecao {
+  background: var(--roxo);
+  color: var(--branco);
+}
+
+.campos-trecho label,
+.alternativas-trecho {
+  display: grid;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.campos-trecho input,
+.alternativas-trecho select {
+  width: 100%;
+  padding: 7px;
+  border: 1px solid var(--borda);
+  border-radius: 7px;
+  background: var(--branco);
+}
+
+.metadados-trecho span {
+  padding: 4px 6px;
+  border-radius: 999px;
+  background: var(--roxo-claro);
+  color: var(--roxo-escuro);
+  font-size: 10px;
+}
+
+.acoes-trecho button {
+  flex: 1 1 90px;
+  border: 1px solid var(--borda);
+  border-radius: 7px;
+  padding: 7px;
+  background: #f7f5f9;
+  color: var(--texto);
+  cursor: pointer;
+  font-size: 10px;
+}
+
+.acoes-trecho .remover-trecho {
+  color: #b42318;
+}
+
+.total-revisao {
+  color: var(--texto-suave);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.total-invalido {
+  color: #b42318;
+}
+
+.botao-gerar-versao {
+  background: var(--roxo);
+  color: var(--branco);
+}
+
 .card-acoes {
   display: grid;
   gap: 8px;

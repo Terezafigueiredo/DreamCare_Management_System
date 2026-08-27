@@ -1,6 +1,7 @@
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from pathlib import Path
@@ -8,7 +9,12 @@ import json
 import psycopg2
 import os
 
-from api.automacao_social import preparar_reel, publicar_reel
+from api.automacao_social import (
+    obter_video_original_em_cache,
+    preparar_reel,
+    publicar_reel,
+    renderizar_reel_revisado,
+)
 
 
 # =========================================================
@@ -59,6 +65,17 @@ class ProducaoAtualizacao(BaseModel):
 
 class PrepararVideoEntrada(BaseModel):
     legenda: str = ""
+    duracao_maxima: int = 60
+
+
+class TrechoRevisadoEntrada(BaseModel):
+    drive_file_id: str
+    inicio_segundos: float
+    fim_segundos: float
+
+
+class RenderizarRevisaoEntrada(BaseModel):
+    trechos: list[TrechoRevisadoEntrada]
     duracao_maxima: int = 60
 
 
@@ -859,6 +876,60 @@ def executar_edicao_video(producao_id, drive_folder_id, duracao_maxima):
         conexao.close()
 
 
+def executar_revisao_video(
+    producao_id, drive_folder_id, relatorio_atual, trechos, duracao_maxima
+):
+    conexao = conectar()
+    cursor = conexao.cursor()
+    try:
+        resultado = renderizar_reel_revisado(
+            drive_folder_id,
+            producao_id,
+            relatorio_atual,
+            trechos,
+            duracao_maxima,
+        )
+        cursor.execute("""
+            UPDATE producao_conteudo
+            SET edicao_status = 'AGUARDANDO_APROVACAO',
+                video_editado_path = %s,
+                video_publico_url = NULL,
+                erro_automacao = NULL,
+                status = 'PRONTO_PARA_POSTAR',
+                tipo_conteudo = 'REEL',
+                data_atualizacao = CURRENT_TIMESTAMP
+            WHERE id = %s
+        """, (str(resultado.caminho), producao_id))
+        conexao.commit()
+    except Exception as erro:
+        conexao.rollback()
+        cursor.execute("""
+            UPDATE producao_conteudo
+            SET edicao_status = 'ERRO',
+                erro_automacao = %s,
+                data_atualizacao = CURRENT_TIMESTAMP
+            WHERE id = %s
+        """, (str(erro)[:3000], producao_id))
+        conexao.commit()
+    finally:
+        cursor.close()
+        conexao.close()
+
+
+def _carregar_relatorio_edicao(caminho_video):
+    caminho = Path(caminho_video).resolve()
+    pasta_permitida = (PASTA_MEDIA / "editados").resolve()
+    if caminho.parent != pasta_permitida:
+        raise HTTPException(status_code=400, detail="Caminho de edição inválido.")
+    relatorio = caminho.with_suffix(".json")
+    if not relatorio.exists():
+        raise HTTPException(status_code=404, detail="Relatório da edição não encontrado.")
+    try:
+        return relatorio, json.loads(relatorio.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as erro:
+        raise HTTPException(status_code=500, detail="Relatório da edição inválido.") from erro
+
+
 @app.post("/producao/{producao_id}/preparar-video")
 def solicitar_edicao_video(
     producao_id: int,
@@ -898,6 +969,139 @@ def solicitar_edicao_video(
             entrada.duracao_maxima,
         )
         return {"mensagem": "Edição iniciada.", "producao_id": producao_id}
+    except HTTPException:
+        conexao.rollback()
+        raise
+    finally:
+        cursor.close()
+        conexao.close()
+
+
+@app.get("/producao/{producao_id}/revisar-trechos")
+def obter_revisao_trechos(producao_id: int):
+    conexao = conectar()
+    cursor = conexao.cursor()
+    try:
+        cursor.execute("""
+            SELECT p.video_editado_path, p.edicao_status, s.drive_folder_id
+            FROM producao_conteudo p
+            INNER JOIN sonhos s ON s.id = p.sonho_id
+            WHERE p.id = %s
+        """, (producao_id,))
+        registro = cursor.fetchone()
+        if not registro:
+            raise HTTPException(status_code=404, detail="Produção não encontrada.")
+        caminho_video, edicao_status, drive_folder_id = registro
+        if edicao_status != "AGUARDANDO_APROVACAO" or not caminho_video:
+            raise HTTPException(status_code=409, detail="Não há uma prévia pronta para revisão.")
+        _, relatorio = _carregar_relatorio_edicao(caminho_video)
+        if relatorio.get("drive_folder_id") != drive_folder_id:
+            raise HTTPException(status_code=409, detail="A prévia não corresponde à pasta atual.")
+        deslocamento = 0.0
+        trechos = []
+        for trecho in relatorio.get("trechos", []):
+            item = dict(trecho)
+            item["inicio_na_previa"] = round(deslocamento, 3)
+            deslocamento += float(trecho.get("duracao_segundos") or 0)
+            trechos.append(item)
+        return {
+            "producao_id": producao_id,
+            "video_preview_url": "/media/editados/" + Path(caminho_video).name,
+            "trechos": trechos,
+        }
+    finally:
+        cursor.close()
+        conexao.close()
+
+
+@app.get("/producao/{producao_id}/video-original/{drive_file_id}")
+def obter_video_original(producao_id: int, drive_file_id: str):
+    conexao = conectar()
+    cursor = conexao.cursor()
+    try:
+        cursor.execute("""
+            SELECT p.video_editado_path, p.edicao_status, s.drive_folder_id
+            FROM producao_conteudo p
+            INNER JOIN sonhos s ON s.id = p.sonho_id
+            WHERE p.id = %s
+        """, (producao_id,))
+        registro = cursor.fetchone()
+        if not registro:
+            raise HTTPException(status_code=404, detail="Produção não encontrada.")
+        caminho_video, edicao_status, drive_folder_id = registro
+        if edicao_status != "AGUARDANDO_APROVACAO" or not caminho_video:
+            raise HTTPException(status_code=409, detail="Esta produção não está disponível para revisão.")
+        _, relatorio = _carregar_relatorio_edicao(caminho_video)
+        autorizado = next(
+            (
+                trecho for trecho in relatorio.get("trechos", [])
+                if trecho.get("drive_file_id") == drive_file_id
+                and trecho.get("pasta_origem_id") == drive_folder_id
+            ),
+            None,
+        )
+        if not autorizado or relatorio.get("drive_folder_id") != drive_folder_id:
+            raise HTTPException(status_code=403, detail="Vídeo não autorizado para esta revisão.")
+        try:
+            caminho_cache, arquivo = obter_video_original_em_cache(
+                drive_folder_id, drive_file_id
+            )
+        except RuntimeError as erro:
+            raise HTTPException(status_code=400, detail=str(erro)) from erro
+        return FileResponse(
+            caminho_cache,
+            media_type=arquivo.get("mimeType") or "video/mp4",
+            headers={
+                "Cache-Control": "private, max-age=3600",
+            },
+        )
+    finally:
+        cursor.close()
+        conexao.close()
+
+
+@app.post("/producao/{producao_id}/renderizar-revisao")
+def solicitar_renderizacao_revisada(
+    producao_id: int,
+    entrada: RenderizarRevisaoEntrada,
+    tarefas: BackgroundTasks,
+):
+    conexao = conectar()
+    cursor = conexao.cursor()
+    try:
+        cursor.execute("""
+            SELECT p.video_editado_path, p.edicao_status, s.drive_folder_id
+            FROM producao_conteudo p
+            INNER JOIN sonhos s ON s.id = p.sonho_id
+            WHERE p.id = %s
+            FOR UPDATE
+        """, (producao_id,))
+        registro = cursor.fetchone()
+        if not registro:
+            raise HTTPException(status_code=404, detail="Produção não encontrada.")
+        caminho_video, edicao_status, drive_folder_id = registro
+        if edicao_status != "AGUARDANDO_APROVACAO" or not caminho_video:
+            raise HTTPException(status_code=409, detail="A prévia não está disponível para revisão.")
+        caminho_relatorio, _ = _carregar_relatorio_edicao(caminho_video)
+        trechos = [item.dict() for item in entrada.trechos]
+        cursor.execute("""
+            UPDATE producao_conteudo
+            SET edicao_status = 'PROCESSANDO',
+                erro_automacao = NULL,
+                status = 'EM_PRODUCAO',
+                data_atualizacao = CURRENT_TIMESTAMP
+            WHERE id = %s
+        """, (producao_id,))
+        conexao.commit()
+        tarefas.add_task(
+            executar_revisao_video,
+            producao_id,
+            drive_folder_id,
+            str(caminho_relatorio),
+            trechos,
+            entrada.duracao_maxima,
+        )
+        return {"mensagem": "Nova versão em processamento.", "producao_id": producao_id}
     except HTTPException:
         conexao.rollback()
         raise

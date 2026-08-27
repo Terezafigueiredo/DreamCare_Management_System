@@ -1,4 +1,5 @@
 import io
+import hashlib
 import json
 import os
 import re
@@ -26,6 +27,8 @@ MAX_TAMANHO_VIDEO = 300 * 1024 * 1024
 MAX_TOTAL_DOWNLOAD = 900 * 1024 * 1024
 MAX_DURACAO_ANALISE = 90.0
 TRECHO_SEGUNDOS = 6.5
+CACHE_ORIGINAIS = Path(tempfile.gettempdir()) / "dreamcare_revisao_originais"
+CACHE_ORIGINAIS_TTL = 24 * 60 * 60
 
 
 @dataclass
@@ -84,6 +87,54 @@ def _baixar_video(service, arquivo, destino):
     while not concluido:
         _, concluido = downloader.next_chunk()
     destino.write_bytes(memoria.getvalue())
+
+
+def obter_video_original_em_cache(drive_folder_id, drive_file_id):
+    """Valida e guarda temporariamente um vídeo direto da pasta autorizada."""
+    service = conectar_drive()
+    arquivo = service.files().get(
+        fileId=drive_file_id,
+        fields="id,name,mimeType,size,modifiedTime,parents",
+    ).execute()
+    if drive_folder_id not in arquivo.get("parents", []):
+        raise RuntimeError("O vídeo não pertence diretamente à pasta autorizada.")
+    if not arquivo.get("mimeType", "").startswith("video/"):
+        raise RuntimeError("O arquivo solicitado não é um vídeo autorizado.")
+    tamanho = int(arquivo.get("size") or 0)
+    if tamanho <= 0 or tamanho > MAX_TAMANHO_VIDEO:
+        raise RuntimeError("O vídeo original excede o limite seguro de tamanho.")
+
+    CACHE_ORIGINAIS.mkdir(parents=True, exist_ok=True)
+    agora = time.time()
+    for item_cache in CACHE_ORIGINAIS.iterdir():
+        if item_cache.is_file() and agora - item_cache.stat().st_mtime > CACHE_ORIGINAIS_TTL:
+            item_cache.unlink(missing_ok=True)
+
+    assinatura = hashlib.sha256(
+        f"{drive_file_id}:{arquivo.get('modifiedTime')}:{tamanho}".encode("utf-8")
+    ).hexdigest()[:24]
+    extensao = Path(arquivo["name"]).suffix.lower()
+    if not re.fullmatch(r"\.[a-z0-9]{1,8}", extensao):
+        extensao = ".mp4"
+    destino = CACHE_ORIGINAIS / f"{assinatura}{extensao}"
+    if destino.exists() and destino.stat().st_size == tamanho:
+        destino.touch()
+        return destino, arquivo
+
+    temporario = CACHE_ORIGINAIS / f"{assinatura}.{uuid.uuid4().hex}.part"
+    try:
+        request = service.files().get_media(fileId=drive_file_id)
+        with temporario.open("wb") as arquivo_local:
+            downloader = MediaIoBaseDownload(arquivo_local, request)
+            concluido = False
+            while not concluido:
+                _, concluido = downloader.next_chunk()
+        if temporario.stat().st_size != tamanho:
+            raise RuntimeError("O download do vídeo original ficou incompleto.")
+        temporario.replace(destino)
+    finally:
+        temporario.unlink(missing_ok=True)
+    return destino, arquivo
 
 
 def _resolver_binario(nome):
@@ -276,6 +327,149 @@ def _validar_reel(ffprobe, caminho, duracao_maxima):
     return metadados
 
 
+def _validar_trechos_manuais(trechos, relatorio_atual, drive_folder_id):
+    """Valida a revisão contra os arquivos já usados, sem aceitar outra pasta."""
+    originais = {
+        item["drive_file_id"]: item
+        for item in relatorio_atual.get("trechos", [])
+        if item.get("pasta_origem_id") == drive_folder_id
+    }
+    if not trechos:
+        raise RuntimeError("A revisão precisa manter pelo menos um trecho.")
+    if len(trechos) > MAX_VIDEOS_DOWNLOAD:
+        raise RuntimeError("A revisão excede o limite de trechos permitido.")
+
+    validados = []
+    duracao_total = 0.0
+    for ordem, trecho in enumerate(trechos, start=1):
+        arquivo_id = trecho.get("drive_file_id")
+        original = originais.get(arquivo_id)
+        if not original:
+            raise RuntimeError("A revisão contém um vídeo que não pertence ao Reel atual.")
+        inicio = float(trecho.get("inicio_segundos", 0))
+        fim = float(trecho.get("fim_segundos", 0))
+        duracao = fim - inicio
+        if inicio < 0 or duracao < 1.0:
+            raise RuntimeError("Cada trecho deve ter início válido e ao menos 1 segundo.")
+        duracao_total += duracao
+        validados.append({
+            "ordem": ordem,
+            "drive_file_id": arquivo_id,
+            "inicio": inicio,
+            "fim": fim,
+            "duracao": duracao,
+            "original": original,
+        })
+    if duracao_total > 60.0 + 0.001:
+        raise RuntimeError("A soma dos trechos não pode ultrapassar 60 segundos.")
+    return validados
+
+
+def renderizar_reel_revisado(
+    drive_folder_id, producao_id, relatorio_atual_path, trechos, duracao_maxima=60
+):
+    """Cria uma nova versão usando somente intervalos revisados do Reel atual."""
+    ffmpeg = _resolver_binario("ffmpeg")
+    ffprobe = _resolver_binario("ffprobe")
+    duracao_maxima = max(10.0, min(float(duracao_maxima), 60.0))
+    relatorio_atual_path = Path(relatorio_atual_path)
+    relatorio_atual = json.loads(relatorio_atual_path.read_text(encoding="utf-8"))
+    if (
+        relatorio_atual.get("producao_id") != producao_id
+        or relatorio_atual.get("drive_folder_id") != drive_folder_id
+    ):
+        raise RuntimeError("O relatório não corresponde a esta produção e pasta.")
+    revisados = _validar_trechos_manuais(trechos, relatorio_atual, drive_folder_id)
+
+    service = conectar_drive()
+    PASTA_EDITADOS.mkdir(parents=True, exist_ok=True)
+    identificador = uuid.uuid4().hex
+    saida = PASTA_EDITADOS / f"reel_{identificador}.mp4"
+    caminho_relatorio = saida.with_suffix(".json")
+
+    with tempfile.TemporaryDirectory(prefix="dreamcare_revisao_") as temporaria:
+        pasta_temporaria = Path(temporaria)
+        baixados = {}
+        total_download = 0
+        segmentos = []
+        relatorio_trechos = []
+        for item in revisados:
+            arquivo_id = item["drive_file_id"]
+            if arquivo_id not in baixados:
+                arquivo = service.files().get(
+                    fileId=arquivo_id,
+                    fields="id,name,mimeType,size,parents",
+                ).execute()
+                if drive_folder_id not in arquivo.get("parents", []):
+                    raise RuntimeError("Um vídeo revisado não pertence diretamente à pasta autorizada.")
+                if not arquivo.get("mimeType", "").startswith("video/"):
+                    raise RuntimeError("A revisão contém um arquivo que não é vídeo.")
+                tamanho = int(arquivo.get("size") or 0)
+                if tamanho > MAX_TAMANHO_VIDEO or total_download + tamanho > MAX_TOTAL_DOWNLOAD:
+                    raise RuntimeError("A revisão excede o limite seguro de download.")
+                destino = pasta_temporaria / f"fonte_{len(baixados) + 1}{Path(arquivo['name']).suffix or '.mp4'}"
+                _baixar_video(service, arquivo, destino)
+                baixados[arquivo_id] = (arquivo, destino, _obter_metadados_video(ffprobe, destino))
+                total_download += tamanho
+
+            arquivo, origem, metadados = baixados[arquivo_id]
+            if item["fim"] > metadados["duracao"] + 0.05:
+                raise RuntimeError(f"O trecho ultrapassa a duração de {arquivo['name']}.")
+            segmento = pasta_temporaria / f"trecho_{item['ordem']:02d}.mp4"
+            _normalizar_trecho(
+                ffmpeg, origem, segmento, item["inicio"], item["duracao"], metadados["tem_audio"]
+            )
+            segmentos.append(segmento)
+            relatorio_trechos.append({
+                "ordem": item["ordem"],
+                "drive_file_id": arquivo_id,
+                "arquivo": arquivo["name"],
+                "posicao_original": item["original"].get("posicao_original"),
+                "pasta_origem_id": drive_folder_id,
+                "pasta_origem_nome": item["original"].get("pasta_origem_nome"),
+                "inicio_segundos": round(item["inicio"], 3),
+                "fim_segundos": round(item["fim"], 3),
+                "duracao_segundos": round(item["duracao"], 3),
+                "pontuacao_movimento": _pontuar_movimento(
+                    ffmpeg, origem, item["inicio"], item["duracao"]
+                ),
+                "audio_original": metadados["tem_audio"],
+                "resolucao_original": f"{metadados['largura']}x{metadados['altura']}",
+                "duracao_video_original": round(metadados["duracao"], 3),
+            })
+        _montar_reel(ffmpeg, segmentos, saida, duracao_maxima)
+
+    validacao = _validar_reel(ffprobe, saida, duracao_maxima)
+    relatorio = {
+        "versao_editor": 3,
+        "tipo_edicao": "REVISAO_MANUAL",
+        "versao_anterior": str(relatorio_atual_path),
+        "producao_id": producao_id,
+        "drive_folder_id": drive_folder_id,
+        "arquivo_saida": str(saida),
+        "resolucao": f"{validacao['largura']}x{validacao['altura']}",
+        "duracao_segundos": round(validacao["duracao"], 3),
+        "tamanho_bytes": saida.stat().st_size,
+        "logo_aplicada": False,
+        "pastas_permitidas": [drive_folder_id],
+        "videos_baixados": len(baixados),
+        "videos_utilizados": len({item["drive_file_id"] for item in relatorio_trechos}),
+        "trechos_utilizados": len(relatorio_trechos),
+        "trechos": relatorio_trechos,
+        "publicacao_automatica": False,
+        "status_destino": "AGUARDANDO_APROVACAO",
+    }
+    caminho_relatorio.write_text(json.dumps(relatorio, ensure_ascii=False, indent=2), encoding="utf-8")
+    return ResultadoEdicao(
+        caminho=saida,
+        relatorio=caminho_relatorio,
+        duracao=validacao["duracao"],
+        tamanho_bytes=saida.stat().st_size,
+        quantidade_videos=relatorio["videos_utilizados"],
+        quantidade_trechos=relatorio["trechos_utilizados"],
+    )
+
+
 def preparar_reel(drive_folder_id, producao_id, duracao_maxima=60):
     ffmpeg = _resolver_binario("ffmpeg")
     ffprobe = _resolver_binario("ffprobe")
@@ -353,6 +547,21 @@ def preparar_reel(drive_folder_id, producao_id, duracao_maxima=60):
                 "duracao_segundos": round(trecho["duracao"], 3),
                 "pontuacao_movimento": trecho["movimento"],
                 "audio_original": item["metadados"]["tem_audio"],
+                "resolucao_original": (
+                    f"{item['metadados']['largura']}x{item['metadados']['altura']}"
+                ),
+                "duracao_video_original": round(item["metadados"]["duracao"], 3),
+                "alternativas": [
+                    {
+                        "inicio_segundos": round(candidato["inicio"], 3),
+                        "fim_segundos": round(
+                            candidato["inicio"] + candidato["duracao"], 3
+                        ),
+                        "duracao_segundos": round(candidato["duracao"], 3),
+                        "pontuacao_movimento": candidato["movimento"],
+                    }
+                    for candidato in item["candidatos"]
+                ],
             })
         _montar_reel(ffmpeg, segmentos, saida, duracao_maxima)
 
