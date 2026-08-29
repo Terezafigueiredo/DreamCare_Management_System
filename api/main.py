@@ -15,6 +15,7 @@ from api.automacao_social import (
     publicar_reel,
     renderizar_reel_revisado,
 )
+from api.video_institucional import router as router_video_institucional
 
 
 # =========================================================
@@ -47,6 +48,8 @@ app.add_middleware(
 PASTA_MEDIA = BASE_DIR / "landing" / "media"
 PASTA_MEDIA.mkdir(parents=True, exist_ok=True)
 app.mount("/media", StaticFiles(directory=PASTA_MEDIA), name="media")
+
+app.include_router(router_video_institucional)
 
 
 # =========================================================

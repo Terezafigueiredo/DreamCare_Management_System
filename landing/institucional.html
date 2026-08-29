@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>DreamCare | Vídeo Institucional ROPE</title>
+
+    <link rel="stylesheet" href="institucional.css" />
+  </head>
+
+  <body>
+    <header class="topo">
+      <div class="topo-conteudo">
+        <div>
+          <p class="marca">DREAMCARE</p>
+
+          <h1>Vídeo Institucional ROPE</h1>
+
+          <p class="subtitulo">
+            Selecione trechos de vários sonhos para montar a narrativa emocional do
+            vídeo institucional. Esta tela cuida apenas da seleção editorial — sem
+            renderização, palavras, logo ou música ainda.
+          </p>
+        </div>
+
+        <div class="topo-acoes">
+          <a href="producao.html" class="botao-topo"> ← Produção de Conteúdo </a>
+
+          <a href="index.html" class="botao-topo"> Início </a>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <div id="mensagem-global" class="mensagem" hidden></div>
+
+      <section class="layout-institucional">
+        <!-- COLUNA ESQUERDA: produção + sonhos -->
+
+        <div class="coluna coluna-sonhos">
+          <div class="bloco-producao">
+            <h2>Produção</h2>
+
+            <label for="select-producao">Produção institucional</label>
+
+            <select id="select-producao">
+              <option value="">Selecione...</option>
+            </select>
+
+            <button type="button" id="botao-nova-producao" class="botao-card">
+              + Nova produção
+            </button>
+
+            <p id="status-producao" class="status-automacao">
+              Nenhuma produção selecionada.
+            </p>
+          </div>
+
+          <div class="bloco-sonhos">
+            <h2>Sonhos disponíveis</h2>
+
+            <input
+              type="search"
+              id="busca-sonho"
+              placeholder="Buscar por nome ou sonho..."
+            />
+
+            <div id="lista-sonhos" class="lista-sonhos">
+              <div class="vazio">Carregando sonhos...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- COLUNA CENTRAL: vídeos do sonho + player + marcação -->
+
+        <div class="coluna coluna-central">
+          <h2 id="titulo-sonho-selecionado">
+            Selecione um sonho à esquerda para ver os vídeos.
+          </h2>
+
+          <div id="lista-videos-sonho" class="lista-videos"></div>
+
+          <div id="area-player" class="area-player" hidden>
+            <h3 id="titulo-video-selecionado"></h3>
+
+            <video
+              id="player-principal"
+              class="previa-video"
+              controls
+              preload="metadata"
+            ></video>
+
+            <div class="tempo-atual" id="tempo-atual-principal">
+              Tempo atual: 00:00.00
+            </div>
+
+            <div class="marcadores-trecho">
+              <button type="button" id="marcar-inicio-principal">
+                Marcar início aqui
+              </button>
+
+              <button type="button" id="marcar-fim-principal">
+                Marcar fim aqui
+              </button>
+            </div>
+
+            <div class="campos-trecho">
+              <label>
+                Início (s)
+                <input type="number" id="inicio-novo" min="0" step="0.001" value="0" />
+              </label>
+
+              <label>
+                Fim (s)
+                <input type="number" id="fim-novo" min="0" step="0.001" value="0" />
+              </label>
+            </div>
+
+            <div class="campos-trecho">
+              <label>
+                Seção narrativa
+                <select id="secao-novo"></select>
+              </label>
+
+              <label>
+                Encaixe (vertical/horizontal)
+                <select id="encaixe-novo">
+                  <option value="cobrir">Cobrir (preenche, pode cortar bordas)</option>
+                  <option value="conter">Conter (mostra tudo, pode ter barras)</option>
+                </select>
+              </label>
+            </div>
+
+            <label class="linha-checkbox">
+              <input type="checkbox" id="audio-novo" />
+              Manter áudio original deste trecho (falas, risadas, reações)
+            </label>
+
+            <div id="alerta-novo-trecho" class="alerta alerta-atencao" hidden></div>
+
+            <button type="button" id="botao-adicionar-trecho" class="botao-card">
+              + Adicionar trecho à seleção
+            </button>
+          </div>
+        </div>
+
+        <!-- COLUNA LATERAL: timeline editorial -->
+
+        <div class="coluna coluna-trechos">
+          <h2>Seleção editorial</h2>
+
+          <div id="resumo-duracao" class="resumo-duracao">
+            <span id="total-trechos">0 trechos</span>
+            <span id="duracao-total">0.0s</span>
+          </div>
+
+          <div id="alerta-duracao" class="alerta alerta-atencao" hidden></div>
+
+          <div id="lista-trechos" class="lista-trechos-editorial">
+            <div class="vazio">
+              Nenhum trecho selecionado ainda.
+            </div>
+          </div>
+
+          <div class="rodape-trechos">
+            <button type="button" id="botao-salvar" class="botao-card botao-salvar">
+              💾 Salvar seleção
+            </button>
+
+            <p id="status-salvamento" class="status-automacao">Tudo salvo.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="institucional.js"></script>
+  </body>
+</html>
