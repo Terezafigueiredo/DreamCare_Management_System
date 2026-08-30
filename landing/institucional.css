@@ -701,6 +701,79 @@ input[type="text"] {
   border: 1px solid var(--borda);
 }
 
+.botao-preview-sequencia {
+  background: var(--azul);
+}
+
+.modal-previa {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.modal-previa-conteudo {
+  background: var(--branco);
+  border-radius: 12px;
+  padding: 16px;
+  width: 100%;
+  max-width: 560px;
+  display: grid;
+  gap: 10px;
+}
+
+.modal-previa-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-weight: 700;
+  color: var(--roxo-escuro);
+}
+
+.botao-fechar-previa {
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--texto-suave);
+  padding: 4px 8px;
+}
+
+.botao-fechar-previa:hover {
+  color: var(--vermelho);
+}
+
+.previa-sequencia-video {
+  width: 100%;
+  max-height: 60vh;
+  border-radius: 7px;
+  background: #111;
+}
+
+.previa-sequencia-navegacao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.previa-sequencia-navegacao .botao-card {
+  width: auto;
+  padding: 8px 16px;
+}
+
+#previa-posicao {
+  font-size: 12px;
+  color: var(--texto-suave);
+  font-weight: 700;
+}
+
 @media (max-width: 1150px) {
   .layout-institucional {
     grid-template-columns: 1fr;

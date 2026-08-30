@@ -169,6 +169,10 @@
 
           <div id="alerta-duracao" class="alerta alerta-atencao" hidden></div>
 
+          <button type="button" id="botao-previa-sequencia" class="botao-card botao-preview-sequencia">
+            ▶ Pré-visualizar sequência
+          </button>
+
           <div id="lista-trechos" class="lista-trechos-editorial">
             <div class="vazio">
               Nenhum trecho selecionado ainda.
@@ -314,6 +318,27 @@
         </div>
       </section>
     </main>
+
+    <div id="modal-previa-sequencia" class="modal-previa" hidden>
+      <div class="modal-previa-conteudo">
+        <div class="modal-previa-cabecalho">
+          <span id="previa-titulo-trecho">Trecho</span>
+          <button type="button" id="fechar-previa-sequencia" class="botao-fechar-previa" aria-label="Fechar prévia">
+            ✕
+          </button>
+        </div>
+
+        <video id="player-previa-sequencia" class="previa-sequencia-video" controls></video>
+
+        <div class="tempo-atual" id="tempo-atual-previa-sequencia">Tempo atual: 00:00.00</div>
+
+        <div class="previa-sequencia-navegacao">
+          <button type="button" id="previa-anterior" class="botao-card">‹ Anterior</button>
+          <span id="previa-posicao">1 / 1</span>
+          <button type="button" id="previa-proxima" class="botao-card">Próximo ›</button>
+        </div>
+      </div>
+    </div>
 
     <script src="institucional.js"></script>
   </body>

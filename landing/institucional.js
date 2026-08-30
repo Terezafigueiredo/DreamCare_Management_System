@@ -135,6 +135,18 @@ function mostrarMensagemGlobal(texto) {
   elemento.textContent = texto;
 }
 
+function construirPreviewUrlTrecho(trecho) {
+  return producaoAtual
+    ? `${API_INSTITUCIONAL}/${producaoAtual.id}/sonhos/${trecho.sonho_id}/video-original/${encodeURIComponent(
+        trecho.drive_file_id
+      )}`
+    : "";
+}
+
+function estaForaDoTrecho(tempo, trecho) {
+  return tempo < trecho.inicio_segundos || tempo >= trecho.fim_segundos;
+}
+
 function preencherSelectSecoes(select) {
   select.innerHTML = "";
   SECOES.forEach(({ valor, rotulo }) => {
@@ -495,11 +507,7 @@ function criarCardTrecho(trecho, indice) {
   const invalido = !(duracao > 0);
   const curto = !invalido && duracao < LIMIAR_TRECHO_CURTO_SEGUNDOS;
 
-  const previewUrl = producaoAtual
-    ? `${API_INSTITUCIONAL}/${producaoAtual.id}/sonhos/${trecho.sonho_id}/video-original/${encodeURIComponent(
-        trecho.drive_file_id
-      )}`
-    : "";
+  const previewUrl = construirPreviewUrlTrecho(trecho);
 
   const card = document.createElement("article");
   card.className = "trecho-editorial" + (invalido ? " trecho-invalido" : "");
@@ -618,6 +626,20 @@ function criarCardTrecho(trecho, indice) {
 
   player.addEventListener("timeupdate", () => {
     card.querySelector(".tempo-atual").textContent = `Tempo atual: ${formatarTempo(player.currentTime)}`;
+    if (player.currentTime >= trecho.fim_segundos) {
+      player.pause();
+      player.currentTime = trecho.fim_segundos;
+    }
+  });
+
+  player.addEventListener("loadedmetadata", () => {
+    player.currentTime = trecho.inicio_segundos;
+  });
+
+  player.addEventListener("play", () => {
+    if (estaForaDoTrecho(player.currentTime, trecho)) {
+      player.currentTime = trecho.inicio_segundos;
+    }
   });
 
   card.querySelector(".marcar-inicio").addEventListener("click", () => {
@@ -670,6 +692,112 @@ function removerTrecho(indice) {
   renderizarTrechos();
   marcarAlteracaoPendente();
 }
+
+// =========================================================
+// PRÉVIA SEQUENCIAL DA SELEÇÃO EDITORIAL
+// =========================================================
+// Reaproduz, em ordem, os trechos já salvos localmente em `trechos` usando o
+// mesmo endpoint de preview do vídeo original já usado nos cards
+// (construirPreviewUrlTrecho). Não gera nenhum arquivo novo nem chama a
+// renderização — apenas controla currentTime/eventos de um único <video> do
+// modal. Fechar a prévia nunca altera `trechos`.
+
+let sequenciaPrevia = [];
+let indicePreviaAtual = 0;
+// Incrementada a cada chamada de irParaTrechoPrevia. Cliques rápidos em
+// Anterior/Próximo (ou avanço automático seguido de navegação manual) podem
+// trocar o `src` do player antes do `loadedmetadata` de uma troca anterior
+// disparar; esse número identifica qual troca ainda é a "atual" quando o
+// evento chega, evitando que um carregamento abandonado reposicione o player
+// no trecho errado.
+let geracaoPrevia = 0;
+
+function abrirPreviaSequencia() {
+  sequenciaPrevia = trechos.filter((trecho) => trecho.fim_segundos > trecho.inicio_segundos);
+  if (!sequenciaPrevia.length) {
+    mostrarMensagemGlobal("Nenhum trecho válido para pré-visualizar (verifique fim > início).");
+    return;
+  }
+  mostrarMensagemGlobal(null);
+  document.getElementById("modal-previa-sequencia").hidden = false;
+  irParaTrechoPrevia(0);
+}
+
+function fecharPreviaSequencia() {
+  const player = document.getElementById("player-previa-sequencia");
+  player.pause();
+  player.removeAttribute("src");
+  player.load();
+  document.getElementById("modal-previa-sequencia").hidden = true;
+}
+
+function irParaTrechoPrevia(indice) {
+  if (indice < 0 || indice >= sequenciaPrevia.length) return;
+  indicePreviaAtual = indice;
+  geracaoPrevia += 1;
+  const geracaoAlvo = geracaoPrevia;
+
+  const trecho = sequenciaPrevia[indicePreviaAtual];
+  const sonhoInfo = sonhos.find((item) => item.id === trecho.sonho_id);
+  const nomeSonho = sonhoInfo ? sonhoInfo.nome : `Sonho #${trecho.sonho_id}`;
+  const player = document.getElementById("player-previa-sequencia");
+  const url = construirPreviewUrlTrecho(trecho);
+
+  document.getElementById("previa-titulo-trecho").textContent =
+    `#${trecho.ordem} · ${nomeSonho} · ${trecho.secao}`;
+  document.getElementById("previa-posicao").textContent =
+    `${indicePreviaAtual + 1} / ${sequenciaPrevia.length}`;
+  document.getElementById("previa-anterior").disabled = indicePreviaAtual === 0;
+  document.getElementById("previa-proxima").disabled = indicePreviaAtual === sequenciaPrevia.length - 1;
+
+  const iniciarNoTrecho = () => {
+    if (geracaoAlvo !== geracaoPrevia) return;
+    player.currentTime = trecho.inicio_segundos;
+    player.play();
+  };
+
+  if (player.src !== url) {
+    player.src = url;
+    player.addEventListener("loadedmetadata", iniciarNoTrecho, { once: true });
+  } else {
+    iniciarNoTrecho();
+  }
+}
+
+document.getElementById("player-previa-sequencia").addEventListener("timeupdate", () => {
+  const player = document.getElementById("player-previa-sequencia");
+  const trecho = sequenciaPrevia[indicePreviaAtual];
+  if (!trecho || player.readyState < 1) return;
+
+  document.getElementById("tempo-atual-previa-sequencia").textContent =
+    `Tempo atual: ${formatarTempo(player.currentTime)}`;
+
+  if (player.currentTime >= trecho.fim_segundos) {
+    if (indicePreviaAtual < sequenciaPrevia.length - 1) {
+      irParaTrechoPrevia(indicePreviaAtual + 1);
+    } else {
+      player.pause();
+      player.currentTime = trecho.fim_segundos;
+    }
+  }
+});
+
+document.getElementById("player-previa-sequencia").addEventListener("play", () => {
+  const player = document.getElementById("player-previa-sequencia");
+  const trecho = sequenciaPrevia[indicePreviaAtual];
+  if (trecho && estaForaDoTrecho(player.currentTime, trecho)) {
+    player.currentTime = trecho.inicio_segundos;
+  }
+});
+
+document.getElementById("botao-previa-sequencia").addEventListener("click", abrirPreviaSequencia);
+document.getElementById("fechar-previa-sequencia").addEventListener("click", fecharPreviaSequencia);
+document.getElementById("previa-anterior").addEventListener("click", () => {
+  irParaTrechoPrevia(indicePreviaAtual - 1);
+});
+document.getElementById("previa-proxima").addEventListener("click", () => {
+  irParaTrechoPrevia(indicePreviaAtual + 1);
+});
 
 function calcularDuracaoEstimadaProducao(lista) {
   // Mesma fórmula de calcular_duracao_estimada_producao em
