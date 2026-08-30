@@ -19,9 +19,9 @@
           <h1>Vídeo Institucional ROPE</h1>
 
           <p class="subtitulo">
-            Selecione trechos de vários sonhos para montar a narrativa emocional do
-            vídeo institucional. Esta tela cuida apenas da seleção editorial — sem
-            renderização, palavras, logo ou música ainda.
+            Selecione trechos de vários sonhos, configure transições e as palavras da
+            narrativa, e renderize as versões vertical e horizontal. Ainda sem logo ou
+            música.
           </p>
         </div>
 
@@ -153,7 +153,18 @@
 
           <div id="resumo-duracao" class="resumo-duracao">
             <span id="total-trechos">0 trechos</span>
-            <span id="duracao-total">0.0s</span>
+            <span class="linha-duracao">
+              <span>Conteúdo dos sonhos</span>
+              <strong id="duracao-conteudo">0.0s</strong>
+            </span>
+            <span class="linha-duracao">
+              <span>Encerramento ROPE</span>
+              <strong id="duracao-encerramento">0.0s</strong>
+            </span>
+            <span class="linha-duracao linha-duracao-total">
+              <span>Duração final estimada</span>
+              <strong id="duracao-total">0.0s</strong>
+            </span>
           </div>
 
           <div id="alerta-duracao" class="alerta alerta-atencao" hidden></div>
@@ -166,11 +177,140 @@
 
           <div class="rodape-trechos">
             <button type="button" id="botao-salvar" class="botao-card botao-salvar">
-              💾 Salvar seleção
+              💾 Salvar produção
             </button>
 
             <p id="status-salvamento" class="status-automacao">Tudo salvo.</p>
           </div>
+        </div>
+      </section>
+
+      <!-- NARRATIVA / PALAVRAS (Fase 6) -->
+
+      <section class="secao-narrativa">
+        <div class="cabecalho-narrativa">
+          <h2>Narrativa / Palavras</h2>
+
+          <div class="acoes-narrativa">
+            <button type="button" id="botao-preset-rope" class="botao-card botao-preset">
+              Aplicar narrativa ROPE
+            </button>
+
+            <button type="button" id="botao-nova-palavra" class="botao-card botao-nova-palavra">
+              + Nova palavra
+            </button>
+          </div>
+        </div>
+
+        <p class="ajuda-narrativa">
+          Cada palavra aparece por um curto período na timeline final já considerando as
+          transições da Fase 5. "Aplicar narrativa ROPE" preenche automaticamente
+          DREAMS / PURPOSE / EACH. / PERSON. / SACRED / FAITH / JOY / FULFILLMENT com tempos
+          proporcionais à duração estimada da produção — depois é só ajustar manualmente.
+        </p>
+
+        <div class="tabela-palavras-wrapper">
+          <table class="tabela-palavras">
+            <thead>
+              <tr>
+                <th>Ativa</th>
+                <th>Palavra</th>
+                <th>Início (s)</th>
+                <th>Fim (s)</th>
+                <th>Impacto</th>
+                <th>Posição</th>
+                <th></th>
+              </tr>
+            </thead>
+
+            <tbody id="lista-palavras"></tbody>
+          </table>
+        </div>
+
+        <div id="palavras-vazio" class="vazio">
+          Nenhuma palavra configurada ainda. Use "Aplicar narrativa ROPE" para começar.
+        </div>
+      </section>
+
+      <!-- ENCERRAMENTO ROPE (Fase 7) -->
+
+      <section class="secao-encerramento">
+        <h2>Encerramento ROPE</h2>
+
+        <p class="ajuda-narrativa">
+          Card final institucional: fundo limpo + logo oficial do ROPE em fade, anexado
+          depois do último trecho (com uma transição suave, nunca um corte brusco). O
+          caminho do arquivo de logo é sempre resolvido e validado pelo backend — não é
+          editável por aqui.
+        </p>
+
+        <p class="info-logo" id="info-logo">Carregando informações da logo...</p>
+
+        <div class="campos-encerramento">
+          <label class="linha-checkbox">
+            <input type="checkbox" id="encerramento-ativo" checked />
+            Incluir encerramento ROPE
+          </label>
+
+          <label>
+            Duração (s)
+            <input type="number" id="encerramento-duracao" min="3" max="10" step="0.5" value="6" />
+          </label>
+
+          <label>
+            Fade de entrada (s)
+            <input type="number" id="encerramento-fade-entrada" min="0.1" step="0.1" value="1" />
+          </label>
+
+          <label>
+            Fade de saída (s)
+            <input type="number" id="encerramento-fade-saida" min="0.1" step="0.1" value="1" />
+          </label>
+        </div>
+      </section>
+
+      <!-- TRILHA SONORA (Fase 8) -->
+
+      <section class="secao-musica">
+        <h2>Trilha sonora</h2>
+
+        <p class="ajuda-narrativa">
+          A trilha precisa ser um arquivo que você tem autorização para usar (MP3, WAV ou
+          M4A/AAC) — nada é baixado automaticamente da internet. A curva de volume sobe e
+          desce ao longo da narrativa (DREAMS → PURPOSE/EACH/PERSON → SACRED/FAITH →
+          JOY/FULFILLMENT → encerramento) e abaixa suavemente nos trechos com áudio original
+          mantido.
+        </p>
+
+        <div class="envio-musica">
+          <input type="file" id="musica-arquivo-input" accept=".mp3,.wav,.m4a,.aac,audio/*" />
+          <button type="button" id="botao-enviar-musica" class="botao-card botao-preset">
+            Enviar trilha
+          </button>
+        </div>
+
+        <p class="status-automacao" id="status-musica">Nenhuma produção selecionada.</p>
+
+        <div id="bloco-musica-atual" class="bloco-musica-atual" hidden>
+          <p class="info-logo" id="info-musica-atual"></p>
+
+          <audio id="preview-musica" controls preload="none"></audio>
+
+          <div class="campos-encerramento">
+            <label class="linha-checkbox">
+              <input type="checkbox" id="musica-ativa" />
+              Música ativa
+            </label>
+
+            <label>
+              Volume geral (0–1.5)
+              <input type="number" id="musica-volume-base" min="0" max="1.5" step="0.05" value="0.8" />
+            </label>
+          </div>
+
+          <button type="button" id="botao-remover-musica" class="botao-card botao-nova-palavra">
+            Remover trilha
+          </button>
         </div>
       </section>
     </main>

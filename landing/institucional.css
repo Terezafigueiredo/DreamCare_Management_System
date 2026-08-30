@@ -356,11 +356,35 @@ input[type="text"] {
 }
 
 .resumo-duracao {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--roxo-escuro);
+}
+
+.resumo-duracao > #total-trechos {
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.linha-duracao {
   display: flex;
   justify-content: space-between;
-  font-size: 12px;
-  font-weight: 700;
+  gap: 8px;
+  color: var(--texto-suave);
+}
+
+.linha-duracao strong {
   color: var(--roxo-escuro);
+  font-variant-numeric: tabular-nums;
+}
+
+.linha-duracao-total {
+  padding-top: 4px;
+  margin-top: 2px;
+  border-top: 1px solid var(--borda);
+  color: var(--roxo-escuro);
+  font-weight: 700;
 }
 
 .lista-trechos-editorial {
@@ -474,6 +498,207 @@ input[type="text"] {
   border-radius: 10px;
   text-align: center;
   font-size: 12px;
+}
+
+.secao-narrativa {
+  margin-top: 16px;
+  background: var(--branco);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.05);
+}
+
+.cabecalho-narrativa {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.cabecalho-narrativa h2 {
+  font-size: 16px;
+  color: var(--roxo-escuro);
+}
+
+.acoes-narrativa {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.acoes-narrativa .botao-card {
+  width: auto;
+}
+
+.botao-preset {
+  background: var(--roxo);
+}
+
+.botao-nova-palavra {
+  background: var(--roxo-claro);
+  color: var(--roxo-escuro);
+}
+
+.ajuda-narrativa {
+  font-size: 12px;
+  color: var(--texto-suave);
+  line-height: 1.5;
+  margin-bottom: 12px;
+  max-width: 900px;
+}
+
+.tabela-palavras-wrapper {
+  overflow-x: auto;
+}
+
+.tabela-palavras {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.tabela-palavras th {
+  text-align: left;
+  color: var(--roxo-escuro);
+  padding: 6px 8px;
+  border-bottom: 2px solid var(--borda);
+  white-space: nowrap;
+}
+
+.tabela-palavras td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--borda);
+  vertical-align: middle;
+}
+
+.tabela-palavras input[type="text"],
+.tabela-palavras input[type="number"],
+.tabela-palavras select {
+  padding: 6px 7px;
+  font-size: 12px;
+  min-width: 68px;
+}
+
+.tabela-palavras input[type="text"] {
+  min-width: 130px;
+}
+
+.linha-palavra-inativa {
+  opacity: 0.5;
+}
+
+.linha-palavra-invalida td {
+  background: #fdeceb;
+}
+
+.botao-remover-palavra {
+  border: 1px solid var(--borda);
+  background: var(--branco);
+  color: var(--vermelho);
+  border-radius: 7px;
+  padding: 5px 9px;
+  cursor: pointer;
+}
+
+.secao-encerramento {
+  margin-top: 16px;
+  background: var(--branco);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.05);
+}
+
+.secao-encerramento h2 {
+  font-size: 16px;
+  color: var(--roxo-escuro);
+  margin-bottom: 6px;
+}
+
+.info-logo {
+  font-size: 12px;
+  color: var(--roxo-escuro);
+  background: var(--roxo-claro);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+  display: inline-block;
+}
+
+.campos-encerramento {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.campos-encerramento label {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--texto-suave);
+}
+
+.campos-encerramento .linha-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--texto);
+}
+
+.campos-encerramento .linha-checkbox input {
+  width: auto;
+}
+
+.secao-musica {
+  margin-top: 16px;
+  background: var(--branco);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.05);
+}
+
+.secao-musica h2 {
+  font-size: 16px;
+  color: var(--roxo-escuro);
+  margin-bottom: 6px;
+}
+
+.envio-musica {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.envio-musica input[type="file"] {
+  flex: 1 1 240px;
+  font-size: 12px;
+}
+
+.envio-musica .botao-card {
+  width: auto;
+}
+
+.bloco-musica-atual {
+  margin-top: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--borda);
+  display: grid;
+  gap: 10px;
+}
+
+.bloco-musica-atual audio {
+  width: 100%;
+}
+
+.bloco-musica-atual .botao-card {
+  background: var(--branco);
+  color: var(--vermelho);
+  border: 1px solid var(--borda);
 }
 
 @media (max-width: 1150px) {
