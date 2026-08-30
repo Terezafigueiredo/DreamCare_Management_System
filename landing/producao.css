@@ -548,3 +548,126 @@ h1 {
   background: #f4f1f6;
   color: var(--roxo-escuro);
 }
+
+/* Mídia mista (foto + vídeo) na revisão do Reel */
+
+.badge-tipo-midia {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.badge-foto {
+  background: #fdf3e0;
+  color: #a15c00;
+}
+
+.badge-video {
+  background: var(--roxo-claro);
+  color: var(--roxo-escuro);
+}
+
+.previa-foto {
+  width: 100%;
+  max-height: 230px;
+  object-fit: contain;
+  border-radius: 7px;
+  background: #111;
+}
+
+.navegacao-midia {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px dashed var(--borda);
+  border-radius: 9px;
+  background: #fbf9fd;
+}
+
+.navegacao-midia h5 {
+  color: var(--roxo-escuro);
+  font-size: 13px;
+}
+
+.breadcrumb-pasta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--texto-suave);
+}
+
+.item-breadcrumb {
+  border: none;
+  background: none;
+  color: var(--roxo);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 2px 4px;
+}
+
+.item-breadcrumb:disabled {
+  color: var(--texto);
+  font-weight: 700;
+  cursor: default;
+}
+
+.grid-subpastas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pasta-item {
+  border: 1px solid var(--borda);
+  border-radius: 7px;
+  padding: 6px 10px;
+  background: var(--branco);
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.grid-midias {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.midia-item {
+  display: grid;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--borda);
+  border-radius: 7px;
+  background: var(--branco);
+  text-align: center;
+}
+
+.midia-thumb-foto {
+  width: 100%;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+.midia-nome {
+  font-size: 9px;
+  color: var(--texto-suave);
+  word-break: break-word;
+  line-height: 1.3;
+}
+
+.botao-adicionar-midia {
+  border: none;
+  border-radius: 6px;
+  padding: 5px;
+  background: var(--roxo);
+  color: var(--branco);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+}

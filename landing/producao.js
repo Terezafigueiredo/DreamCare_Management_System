@@ -443,10 +443,17 @@ function montarRevisao(painel, item, revisao) {
   painel.innerHTML = `
     <h4>Revisar trechos</h4>
     <p class="revisao-ajuda">
-      Ajuste somente os intervalos dos vídeos já usados. A soma final deve ter até 60 segundos.
+      Ajuste os intervalos de vídeo e a duração das fotos, reordene ou adicione
+      mais mídia da pasta do sonho. A soma final deve ter até 60 segundos.
     </p>
     <div class="lista-trechos-revisao"></div>
     <div class="total-revisao"></div>
+    <div class="navegacao-midia">
+      <h5>Adicionar mídia da pasta do sonho</h5>
+      <div class="breadcrumb-pasta"></div>
+      <div class="grid-subpastas"></div>
+      <div class="grid-midias"></div>
+    </div>
     <button type="button" class="botao-card botao-gerar-versao">Gerar nova versão</button>
   `;
   const lista = painel.querySelector(".lista-trechos-revisao");
@@ -457,23 +464,41 @@ function montarRevisao(painel, item, revisao) {
   const atualizar = () => atualizarResumoRevisao(painel);
   lista.addEventListener("input", atualizar);
   lista.addEventListener("change", atualizar);
+  montarNavegacaoMidia(painel, item);
   painel.querySelector(".botao-gerar-versao").addEventListener("click", async (evento) => {
     const botao = evento.currentTarget;
-    const trechos = [...lista.querySelectorAll(".trecho-revisao")].map((cardTrecho) => ({
-      drive_file_id: cardTrecho.dataset.fileId,
-      inicio_segundos: Number(cardTrecho.querySelector(".inicio-trecho").value),
-      fim_segundos: Number(cardTrecho.querySelector(".fim-trecho").value),
-    }));
+    const trechos = [...lista.querySelectorAll(".trecho-revisao")].map((cardTrecho) => {
+      if (cardTrecho.dataset.tipoMidia === "imagem") {
+        return {
+          tipo_midia: "imagem",
+          drive_file_id: cardTrecho.dataset.fileId,
+          duracao_segundos: Number(cardTrecho.querySelector(".duracao-foto").value),
+          encaixe: cardTrecho.querySelector(".encaixe-foto").value,
+        };
+      }
+      return {
+        tipo_midia: "video",
+        drive_file_id: cardTrecho.dataset.fileId,
+        inicio_segundos: Number(cardTrecho.querySelector(".inicio-trecho").value),
+        fim_segundos: Number(cardTrecho.querySelector(".fim-trecho").value),
+      };
+    });
     const total = trechos.reduce(
-      (soma, trecho) => soma + trecho.fim_segundos - trecho.inicio_segundos,
+      (soma, trecho) =>
+        soma + (trecho.tipo_midia === "imagem" ? trecho.duracao_segundos : trecho.fim_segundos - trecho.inicio_segundos),
       0
     );
-    if (!trechos.length || trechos.some((trecho) => trecho.inicio_segundos < 0 || trecho.fim_segundos - trecho.inicio_segundos < 1)) {
-      alert("Mantenha ao menos um trecho, todos com duração mínima de 1 segundo.");
+    const algumInvalido = trechos.some((trecho) =>
+      trecho.tipo_midia === "imagem"
+        ? !(trecho.duracao_segundos >= 2 && trecho.duracao_segundos <= 8)
+        : trecho.inicio_segundos < 0 || trecho.fim_segundos - trecho.inicio_segundos < 1
+    );
+    if (!trechos.length || algumInvalido) {
+      alert("Verifique os itens: vídeos precisam de início válido e ao menos 1 segundo; fotos, entre 2 e 8 segundos.");
       return;
     }
     if (total > 60.001) {
-      alert("A soma dos trechos não pode ultrapassar 60 segundos.");
+      alert("A soma dos itens não pode ultrapassar 60 segundos.");
       return;
     }
     if (!confirm("Gerar uma nova versão preservando o Reel atual?")) return;
@@ -494,6 +519,142 @@ function montarRevisao(painel, item, revisao) {
   atualizar();
 }
 
+function adicionarMidiaNaLista(painel, producaoId, midia) {
+  const lista = painel.querySelector(".lista-trechos-revisao");
+  const ordem = lista.querySelectorAll(".trecho-revisao").length + 1;
+  const trechoSintetico =
+    midia.tipo_midia === "imagem"
+      ? {
+          ordem,
+          tipo_midia: "imagem",
+          drive_file_id: midia.drive_file_id,
+          arquivo: midia.nome,
+          duracao_segundos: 3.0,
+          encaixe: "conter",
+          novo: true,
+        }
+      : {
+          ordem,
+          tipo_midia: "video",
+          drive_file_id: midia.drive_file_id,
+          arquivo: midia.nome,
+          inicio_segundos: 0,
+          fim_segundos: 1,
+          duracao_segundos: null,
+          audio_original: null,
+          pontuacao_movimento: null,
+          novo: true,
+        };
+  lista.appendChild(criarTrechoRevisao(trechoSintetico, producaoId));
+  atualizarResumoRevisao(painel);
+}
+
+async function montarNavegacaoMidia(painel, item) {
+  const container = painel.querySelector(".navegacao-midia");
+  const breadcrumbEl = container.querySelector(".breadcrumb-pasta");
+  const subpastasEl = container.querySelector(".grid-subpastas");
+  const midiasEl = container.querySelector(".grid-midias");
+
+  let todasMidias = [];
+  let caminhoAtual = "";
+
+  try {
+    const resposta = await fetch(`${API_PRODUCAO}/${item.producao_id}/midias-disponiveis`);
+    const dados = await resposta.json();
+    if (!resposta.ok) throw new Error(dados.detail || "Não foi possível listar a mídia da pasta.");
+    todasMidias = dados.midias || [];
+  } catch (erro) {
+    container.innerHTML = `<h5>Adicionar mídia da pasta do sonho</h5><p class="revisao-ajuda">Não foi possível carregar a mídia da pasta: ${escaparHtml(erro.message)}</p>`;
+    return;
+  }
+
+  function subpastasDiretas(caminho) {
+    const prefixo = caminho ? `${caminho}/` : "";
+    const nomes = new Set();
+    todasMidias.forEach((midia) => {
+      if (caminho && !midia.caminho_relativo.startsWith(prefixo)) return;
+      const resto = caminho ? midia.caminho_relativo.slice(prefixo.length) : midia.caminho_relativo;
+      const barra = resto.indexOf("/");
+      if (barra > -1) nomes.add(resto.slice(0, barra));
+    });
+    return [...nomes].sort();
+  }
+
+  function midiasDiretas(caminho) {
+    const prefixo = caminho ? `${caminho}/` : "";
+    return todasMidias.filter((midia) => {
+      if (caminho && !midia.caminho_relativo.startsWith(prefixo)) return false;
+      const resto = caminho ? midia.caminho_relativo.slice(prefixo.length) : midia.caminho_relativo;
+      return resto.indexOf("/") === -1;
+    });
+  }
+
+  function renderizarBreadcrumb() {
+    const partes = caminhoAtual ? caminhoAtual.split("/") : [];
+    let acumulado = "";
+    const trilhos = [{ nome: "Raiz", caminho: "" }];
+    partes.forEach((parte) => {
+      acumulado = acumulado ? `${acumulado}/${parte}` : parte;
+      trilhos.push({ nome: parte, caminho: acumulado });
+    });
+    breadcrumbEl.innerHTML = trilhos
+      .map(
+        (trilho, indice) => `
+      <button type="button" class="item-breadcrumb" data-caminho="${escaparHtml(trilho.caminho)}" ${indice === trilhos.length - 1 ? "disabled" : ""}>
+        ${escaparHtml(trilho.nome)}
+      </button>`
+      )
+      .join("<span>/</span>");
+    breadcrumbEl.querySelectorAll(".item-breadcrumb").forEach((botao) => {
+      botao.addEventListener("click", () => {
+        caminhoAtual = botao.dataset.caminho;
+        renderizarNavegacao();
+      });
+    });
+  }
+
+  function renderizarNavegacao() {
+    renderizarBreadcrumb();
+    const subpastas = subpastasDiretas(caminhoAtual);
+    subpastasEl.innerHTML = subpastas
+      .map((nome) => `<button type="button" class="pasta-item" data-nome="${escaparHtml(nome)}">📁 ${escaparHtml(nome)}</button>`)
+      .join("");
+    subpastasEl.querySelectorAll(".pasta-item").forEach((botao) => {
+      botao.addEventListener("click", () => {
+        caminhoAtual = caminhoAtual ? `${caminhoAtual}/${botao.dataset.nome}` : botao.dataset.nome;
+        renderizarNavegacao();
+      });
+    });
+
+    const midias = midiasDiretas(caminhoAtual);
+    midiasEl.innerHTML = midias.length
+      ? midias
+          .map(
+            (midia, indice) => `
+          <div class="midia-item">
+            ${
+              midia.tipo_midia === "imagem"
+                ? `<img class="midia-thumb-foto" loading="lazy" src="${API_PRODUCAO}/${item.producao_id}/midia-original/${encodeURIComponent(midia.drive_file_id)}" alt="${escaparHtml(midia.nome)}">`
+                : `<span class="badge-tipo-midia badge-video">VÍDEO</span>`
+            }
+            <span class="midia-nome">${escaparHtml(midia.nome)}</span>
+            <button type="button" class="botao-adicionar-midia" data-indice="${indice}">+ Adicionar</button>
+          </div>`
+          )
+          .join("")
+      : `<p class="revisao-ajuda">Nenhuma mídia diretamente nesta pasta.</p>`;
+
+    midiasEl.querySelectorAll(".botao-adicionar-midia").forEach((botao) => {
+      botao.addEventListener("click", () => {
+        const midia = midias[Number(botao.dataset.indice)];
+        adicionarMidiaNaLista(painel, item.producao_id, midia);
+      });
+    });
+  }
+
+  renderizarNavegacao();
+}
+
 function formatarTempoVideo(segundos) {
   const valor = Math.max(0, Number(segundos) || 0);
   const minutos = Math.floor(valor / 60);
@@ -501,36 +662,105 @@ function formatarTempoVideo(segundos) {
   return `${String(minutos).padStart(2, "0")}:${restante.toFixed(2).padStart(5, "0")}`;
 }
 
-function criarTrechoRevisao(trecho, producaoId) {
+function urlPreviaMidia(producaoId, trecho) {
+  // Itens já salvos no relatório da revisão em andamento usam o endpoint
+  // antigo (que exige o arquivo já estar no relatório). Fotos e itens novos
+  // (ainda não renderizados) usam o endpoint novo, que autoriza por
+  // ancestralidade real no Drive em vez de checar o relatório.
+  if (trecho.tipo_midia === "imagem" || trecho.novo) {
+    return `${API_PRODUCAO}/${producaoId}/midia-original/${encodeURIComponent(trecho.drive_file_id)}`;
+  }
+  return `${API_PRODUCAO}/${producaoId}/video-original/${encodeURIComponent(trecho.drive_file_id)}`;
+}
+
+function criarTrechoRevisaoFoto(trecho, producaoId) {
   const card = document.createElement("article");
   card.className = "trecho-revisao";
   card.dataset.fileId = trecho.drive_file_id;
-  const alternativas = trecho.alternativas || [];
+  card.dataset.tipoMidia = "imagem";
+  const duracao = Number(trecho.duracao_segundos ?? 3.0);
+  const encaixe = trecho.encaixe === "cobrir" ? "cobrir" : "conter";
   card.innerHTML = `
     <div class="trecho-cabecalho">
       <strong class="ordem-trecho">Trecho ${trecho.ordem}</strong>
+      <span class="badge-tipo-midia badge-foto">FOTO</span>
+      <span>${escaparHtml(trecho.arquivo)}</span>
+    </div>
+    <img class="previa-foto" loading="lazy" alt="${escaparHtml(trecho.arquivo)}"
+      src="${urlPreviaMidia(producaoId, trecho)}">
+    <div class="campos-trecho">
+      <label>Duração (s)
+        <input class="duracao-foto" type="number" min="2" max="8" step="0.1" value="${duracao}">
+      </label>
+      <label>Encaixe
+        <select class="encaixe-foto">
+          <option value="conter" ${encaixe === "conter" ? "selected" : ""}>Conter</option>
+          <option value="cobrir" ${encaixe === "cobrir" ? "selected" : ""}>Cobrir</option>
+        </select>
+      </label>
+    </div>
+    <div class="metadados-trecho">
+      <span class="duracao-trecho">${duracao.toFixed(3)}s</span>
+    </div>
+    <div class="acoes-trecho">
+      <button type="button" class="mover-cima">Mover para cima</button>
+      <button type="button" class="mover-baixo">Mover para baixo</button>
+      <button type="button" class="remover-trecho">Remover trecho</button>
+    </div>
+  `;
+  card.querySelector(".mover-cima").addEventListener("click", () => {
+    if (card.previousElementSibling) card.parentElement.insertBefore(card, card.previousElementSibling);
+    atualizarResumoRevisao(card.closest(".revisao-trechos"));
+  });
+  card.querySelector(".mover-baixo").addEventListener("click", () => {
+    if (card.nextElementSibling) card.parentElement.insertBefore(card.nextElementSibling, card);
+    atualizarResumoRevisao(card.closest(".revisao-trechos"));
+  });
+  card.querySelector(".remover-trecho").addEventListener("click", () => {
+    const painel = card.closest(".revisao-trechos");
+    card.remove();
+    atualizarResumoRevisao(painel);
+  });
+  return card;
+}
+
+function criarTrechoRevisao(trecho, producaoId) {
+  if (trecho.tipo_midia === "imagem") {
+    return criarTrechoRevisaoFoto(trecho, producaoId);
+  }
+  const card = document.createElement("article");
+  card.className = "trecho-revisao";
+  card.dataset.fileId = trecho.drive_file_id;
+  card.dataset.tipoMidia = "video";
+  const alternativas = trecho.alternativas || [];
+  const inicioInicial = trecho.inicio_segundos ?? 0;
+  const fimInicial = trecho.fim_segundos ?? 1;
+  card.innerHTML = `
+    <div class="trecho-cabecalho">
+      <strong class="ordem-trecho">Trecho ${trecho.ordem}</strong>
+      <span class="badge-tipo-midia badge-video">VÍDEO</span>
       <span>${escaparHtml(trecho.arquivo)}</span>
     </div>
     <video class="previa-trecho" controls preload="none"
-      src="${API_PRODUCAO}/${producaoId}/video-original/${encodeURIComponent(trecho.drive_file_id)}"></video>
+      src="${urlPreviaMidia(producaoId, trecho)}"></video>
     <div class="tempo-atual">Tempo atual: 00:00.00</div>
     <div class="marcadores-trecho">
       <button type="button" class="marcar-inicio">Marcar início aqui</button>
       <button type="button" class="marcar-fim">Marcar fim aqui</button>
     </div>
     <div class="selecao-visual">
-      <span>Início selecionado: <strong class="inicio-formatado">${formatarTempoVideo(trecho.inicio_segundos)}</strong></span>
-      <span>Fim selecionado: <strong class="fim-formatado">${formatarTempoVideo(trecho.fim_segundos)}</strong></span>
-      <span>Duração: <strong class="duracao-formatada">${Number(trecho.duracao_segundos).toFixed(2)}s</strong></span>
+      <span>Início selecionado: <strong class="inicio-formatado">${formatarTempoVideo(inicioInicial)}</strong></span>
+      <span>Fim selecionado: <strong class="fim-formatado">${formatarTempoVideo(fimInicial)}</strong></span>
+      <span>Duração: <strong class="duracao-formatada">${(fimInicial - inicioInicial).toFixed(2)}s</strong></span>
     </div>
     <div class="campos-trecho">
-      <label>Início <input class="inicio-trecho" type="number" min="0" step="0.001" value="${trecho.inicio_segundos}"></label>
-      <label>Fim <input class="fim-trecho" type="number" min="1" step="0.001" value="${trecho.fim_segundos}"></label>
+      <label>Início <input class="inicio-trecho" type="number" min="0" step="0.001" value="${inicioInicial}"></label>
+      <label>Fim <input class="fim-trecho" type="number" min="1" step="0.001" value="${fimInicial}"></label>
     </div>
     <div class="metadados-trecho">
-      <span class="duracao-trecho">${Number(trecho.duracao_segundos).toFixed(3)}s</span>
-      <span>Movimento: ${Number(trecho.pontuacao_movimento || 0).toFixed(2)}</span>
-      <span>Áudio: ${trecho.audio_original ? "sim" : "não"}</span>
+      <span class="duracao-trecho">${(fimInicial - inicioInicial).toFixed(3)}s</span>
+      <span>Movimento: ${trecho.pontuacao_movimento == null ? "—" : Number(trecho.pontuacao_movimento).toFixed(2)}</span>
+      <span>Áudio: ${trecho.audio_original == null ? "—" : (trecho.audio_original ? "sim" : "não")}</span>
     </div>
     <label class="alternativas-trecho">
       Usar outro trecho deste vídeo
@@ -541,7 +771,7 @@ function criarTrechoRevisao(trecho, producaoId) {
             ${Number(alternativa.inicio_segundos).toFixed(3)}s–${Number(alternativa.fim_segundos).toFixed(3)}s · movimento ${Number(alternativa.pontuacao_movimento || 0).toFixed(2)}
           </option>`).join("")}
       </select>
-      ${alternativas.length ? "" : "<small>Alternativas não registradas nesta versão antiga; ajuste início e fim manualmente.</small>"}
+      ${alternativas.length ? "" : `<small>${trecho.novo ? "Vídeo adicionado manualmente — sem alternativas automáticas; use os marcadores abaixo." : "Alternativas não registradas nesta versão antiga; ajuste início e fim manualmente."}</small>`}
     </label>
     <button type="button" class="previsualizar-selecao">Pré-visualizar trecho</button>
     <div class="acoes-trecho">
@@ -615,15 +845,21 @@ function atualizarResumoRevisao(painel) {
   let total = 0;
   painel.querySelectorAll(".trecho-revisao").forEach((card, indice) => {
     card.querySelector(".ordem-trecho").textContent = `Trecho ${indice + 1}`;
-    const duracao = Math.max(0, Number(card.querySelector(".fim-trecho").value) - Number(card.querySelector(".inicio-trecho").value));
+    let duracao;
+    if (card.dataset.tipoMidia === "imagem") {
+      duracao = Math.max(0, Number(card.querySelector(".duracao-foto").value) || 0);
+    } else {
+      duracao = Math.max(0, Number(card.querySelector(".fim-trecho").value) - Number(card.querySelector(".inicio-trecho").value));
+      card.querySelector(".inicio-formatado").textContent = formatarTempoVideo(card.querySelector(".inicio-trecho").value);
+      card.querySelector(".fim-formatado").textContent = formatarTempoVideo(card.querySelector(".fim-trecho").value);
+    }
     card.querySelector(".duracao-trecho").textContent = `${duracao.toFixed(3)}s`;
-    card.querySelector(".inicio-formatado").textContent = formatarTempoVideo(card.querySelector(".inicio-trecho").value);
-    card.querySelector(".fim-formatado").textContent = formatarTempoVideo(card.querySelector(".fim-trecho").value);
-    card.querySelector(".duracao-formatada").textContent = `${duracao.toFixed(2)}s`;
+    const duracaoFormatada = card.querySelector(".duracao-formatada");
+    if (duracaoFormatada) duracaoFormatada.textContent = `${duracao.toFixed(2)}s`;
     total += duracao;
   });
   const resumo = painel.querySelector(".total-revisao");
-  resumo.textContent = `${painel.querySelectorAll(".trecho-revisao").length} trechos · ${total.toFixed(3)} segundos`;
+  resumo.textContent = `${painel.querySelectorAll(".trecho-revisao").length} itens · ${total.toFixed(3)} segundos`;
   resumo.classList.toggle("total-invalido", total > 60);
 }
 

@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from pathlib import Path
+from typing import Literal
 import json
 import psycopg2
 import os
@@ -13,7 +14,12 @@ from api.automacao_social import (
     obter_video_original_em_cache,
     preparar_reel,
     publicar_reel,
-    renderizar_reel_revisado,
+    renderizar_reel_manual,
+)
+from api.automacao_social_midia import (
+    MidiaAutorizacaoError,
+    listar_midias_do_sonho,
+    obter_midia_em_cache,
 )
 from api.video_institucional import router as router_video_institucional
 
@@ -72,9 +78,12 @@ class PrepararVideoEntrada(BaseModel):
 
 
 class TrechoRevisadoEntrada(BaseModel):
+    tipo_midia: Literal["video", "imagem"] = "video"
     drive_file_id: str
-    inicio_segundos: float
-    fim_segundos: float
+    inicio_segundos: float | None = None
+    fim_segundos: float | None = None
+    duracao_segundos: float | None = None  # só para imagem
+    encaixe: Literal["cobrir", "conter"] = "conter"  # só para imagem; ignorado em vídeo
 
 
 class RenderizarRevisaoEntrada(BaseModel):
@@ -885,7 +894,7 @@ def executar_revisao_video(
     conexao = conectar()
     cursor = conexao.cursor()
     try:
-        resultado = renderizar_reel_revisado(
+        resultado = renderizar_reel_manual(
             drive_folder_id,
             producao_id,
             relatorio_atual,
@@ -1004,6 +1013,7 @@ def obter_revisao_trechos(producao_id: int):
         trechos = []
         for trecho in relatorio.get("trechos", []):
             item = dict(trecho)
+            item.setdefault("tipo_midia", "video")
             item["inicio_na_previa"] = round(deslocamento, 3)
             deslocamento += float(trecho.get("duracao_segundos") or 0)
             trechos.append(item)
@@ -1012,6 +1022,72 @@ def obter_revisao_trechos(producao_id: int):
             "video_preview_url": "/media/editados/" + Path(caminho_video).name,
             "trechos": trechos,
         }
+    finally:
+        cursor.close()
+        conexao.close()
+
+
+@app.get("/producao/{producao_id}/midias-disponiveis")
+def obter_midias_disponiveis(producao_id: int):
+    """Lista, recursivamente (vídeo + foto), a pasta do Drive do sonho desta
+    produção — para a navegação manual de adicionar mídia à revisão. Somente
+    leitura; não depende de haver uma prévia já renderizada."""
+    conexao = conectar()
+    cursor = conexao.cursor()
+    try:
+        cursor.execute("""
+            SELECT s.drive_folder_id
+            FROM producao_conteudo p
+            INNER JOIN sonhos s ON s.id = p.sonho_id
+            WHERE p.id = %s
+        """, (producao_id,))
+        registro = cursor.fetchone()
+        if not registro:
+            raise HTTPException(status_code=404, detail="Produção não encontrada.")
+        drive_folder_id = registro[0]
+        if not drive_folder_id:
+            raise HTTPException(status_code=400, detail="Esta produção não possui pasta no Drive.")
+        try:
+            nome_pasta, midias = listar_midias_do_sonho(drive_folder_id)
+        except MidiaAutorizacaoError as erro:
+            raise HTTPException(status_code=erro.status_code, detail=str(erro)) from erro
+        return {"producao_id": producao_id, "pasta": nome_pasta, "midias": midias}
+    finally:
+        cursor.close()
+        conexao.close()
+
+
+@app.get("/producao/{producao_id}/midia-original/{drive_file_id}")
+def obter_midia_original(producao_id: int, drive_file_id: str):
+    """Serve o preview de uma mídia (vídeo ou foto) da pasta do sonho, ainda
+    que ela não esteja em nenhum relatório de Reel — autoriza por
+    ancestralidade real no Drive (aceita subpasta), nunca por um campo vindo
+    do cliente. Não confunde com /video-original/{drive_file_id}, que exige
+    o arquivo já estar no relatório da revisão em andamento."""
+    conexao = conectar()
+    cursor = conexao.cursor()
+    try:
+        cursor.execute("""
+            SELECT s.drive_folder_id
+            FROM producao_conteudo p
+            INNER JOIN sonhos s ON s.id = p.sonho_id
+            WHERE p.id = %s
+        """, (producao_id,))
+        registro = cursor.fetchone()
+        if not registro:
+            raise HTTPException(status_code=404, detail="Produção não encontrada.")
+        drive_folder_id = registro[0]
+        if not drive_folder_id:
+            raise HTTPException(status_code=400, detail="Esta produção não possui pasta no Drive.")
+        try:
+            caminho_cache, arquivo, _ = obter_midia_em_cache(drive_folder_id, drive_file_id)
+        except MidiaAutorizacaoError as erro:
+            raise HTTPException(status_code=erro.status_code, detail=str(erro)) from erro
+        return FileResponse(
+            caminho_cache,
+            media_type=arquivo.get("mimeType") or "application/octet-stream",
+            headers={"Cache-Control": "private, max-age=3600"},
+        )
     finally:
         cursor.close()
         conexao.close()
