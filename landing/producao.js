@@ -448,6 +448,7 @@ function montarRevisao(painel, item, revisao) {
     </p>
     <div class="lista-trechos-revisao"></div>
     <div class="total-revisao"></div>
+    <button type="button" class="botao-card botao-previa-sequencia-reels">▶ Pré-visualizar sequência</button>
     <div class="navegacao-midia">
       <h5>Adicionar mídia da pasta do sonho</h5>
       <div class="breadcrumb-pasta"></div>
@@ -465,6 +466,9 @@ function montarRevisao(painel, item, revisao) {
   lista.addEventListener("input", atualizar);
   lista.addEventListener("change", atualizar);
   montarNavegacaoMidia(painel, item);
+  painel.querySelector(".botao-previa-sequencia-reels").addEventListener("click", () => {
+    abrirPreviaSequenciaReels(painel);
+  });
   painel.querySelector(".botao-gerar-versao").addEventListener("click", async (evento) => {
     const botao = evento.currentTarget;
     const trechos = [...lista.querySelectorAll(".trecho-revisao")].map((cardTrecho) => {
@@ -655,6 +659,248 @@ async function montarNavegacaoMidia(painel, item) {
   renderizarNavegacao();
 }
 
+// =========================================================
+// PRÉVIA SEQUENCIAL DA REVISÃO (foto + vídeo, sem gerar MP4)
+// =========================================================
+// Lê a ordem, os cortes de vídeo e a duração das fotos diretamente dos
+// cards visíveis no momento em que a prévia é aberta — nunca do servidor —
+// para sempre refletir a seleção atual da interface, incluindo edições
+// ainda não salvas. Não usa FFmpeg nem gera nenhum arquivo: só alterna um
+// <video>/<img> reaproveitando as mesmas URLs de preview já usadas nos
+// cards (video-original/midia-original).
+
+let sequenciaPreviaReels = [];
+let indicePreviaReelsAtual = 0;
+let geracaoPreviaReels = 0;
+let previaReelsTocando = false;
+let timeoutFotoPreviaReels = null;
+let fotoPreviaReelsInicioTs = 0;
+let fotoPreviaReelsRestanteMs = 0;
+let seekEmAndamentoPreviaReels = false;
+
+function limparTimerFotoPreviaReels() {
+  if (timeoutFotoPreviaReels) {
+    clearTimeout(timeoutFotoPreviaReels);
+    timeoutFotoPreviaReels = null;
+  }
+}
+
+function iniciarTimerFotoPreviaReels(duracaoMs, geracaoAlvo) {
+  limparTimerFotoPreviaReels();
+  fotoPreviaReelsInicioTs = performance.now();
+  fotoPreviaReelsRestanteMs = duracaoMs;
+  timeoutFotoPreviaReels = setTimeout(() => {
+    if (geracaoAlvo !== geracaoPreviaReels) return;
+    avancarAutoPreviaReels();
+  }, duracaoMs);
+}
+
+function pausarTimerFotoPreviaReels() {
+  if (timeoutFotoPreviaReels) {
+    fotoPreviaReelsRestanteMs = Math.max(0, fotoPreviaReelsRestanteMs - (performance.now() - fotoPreviaReelsInicioTs));
+  }
+  limparTimerFotoPreviaReels();
+}
+
+function garantirModalPreviaReels() {
+  let modal = document.getElementById("modal-previa-reels");
+  if (modal) return modal;
+
+  modal = document.createElement("div");
+  modal.id = "modal-previa-reels";
+  modal.className = "modal-previa";
+  modal.hidden = true;
+  modal.innerHTML = `
+    <div class="modal-previa-conteudo">
+      <div class="modal-previa-cabecalho">
+        <span id="previa-reels-titulo">Item 1 de 1</span>
+        <button type="button" id="previa-reels-fechar" class="botao-fechar-previa" aria-label="Fechar prévia">✕</button>
+      </div>
+      <div class="previa-reels-info">
+        <span id="previa-reels-badge" class="badge-tipo-midia badge-video">VÍDEO</span>
+        <span id="previa-reels-nome"></span>
+      </div>
+      <video id="previa-reels-video" class="previa-sequencia-video" playsinline></video>
+      <img id="previa-reels-imagem" class="previa-sequencia-video" alt="" hidden>
+      <div class="previa-sequencia-navegacao">
+        <button type="button" id="previa-reels-anterior" class="botao-card">‹ Anterior</button>
+        <button type="button" id="previa-reels-playpause" class="botao-card">▶ Play</button>
+        <button type="button" id="previa-reels-proxima" class="botao-card">Próximo ›</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const video = modal.querySelector("#previa-reels-video");
+  video.addEventListener("timeupdate", () => {
+    // Ignora leituras durante um seek em andamento: setar currentTime não
+    // atualiza o valor lido por um timeupdate instantaneamente, então um
+    // evento pode chegar ainda com o tempo ANTIGO (ex.: reaproveitando o
+    // mesmo <video> de um item anterior que tinha parado bem no fim) e
+    // avançar o item errado antes do seek de fato completar.
+    if (seekEmAndamentoPreviaReels) return;
+    const itemAtual = sequenciaPreviaReels[indicePreviaReelsAtual];
+    if (!itemAtual || itemAtual.tipoMidia !== "video" || video.readyState < 1) return;
+    if (video.currentTime >= itemAtual.fim) {
+      avancarAutoPreviaReels();
+    }
+  });
+  video.addEventListener("play", () => {
+    const itemAtual = sequenciaPreviaReels[indicePreviaReelsAtual];
+    if (itemAtual && itemAtual.tipoMidia === "video" && (video.currentTime < itemAtual.inicio || video.currentTime >= itemAtual.fim)) {
+      video.currentTime = itemAtual.inicio;
+    }
+  });
+
+  modal.querySelector("#previa-reels-fechar").addEventListener("click", fecharPreviaSequenciaReels);
+  modal.querySelector("#previa-reels-anterior").addEventListener("click", () => {
+    if (indicePreviaReelsAtual > 0) carregarItemPreviaReels(indicePreviaReelsAtual - 1);
+  });
+  modal.querySelector("#previa-reels-proxima").addEventListener("click", () => {
+    if (indicePreviaReelsAtual < sequenciaPreviaReels.length - 1) carregarItemPreviaReels(indicePreviaReelsAtual + 1);
+  });
+  modal.querySelector("#previa-reels-playpause").addEventListener("click", alternarPlayPausePreviaReels);
+
+  return modal;
+}
+
+function construirSequenciaPreviaReels(painel) {
+  return [...painel.querySelectorAll(".trecho-revisao")]
+    .map((card) => {
+      const tipoMidia = card.dataset.tipoMidia;
+      const nomeEl = card.querySelector(".nome-arquivo-trecho");
+      const nome = nomeEl ? nomeEl.textContent : "";
+      const midiaEl = card.querySelector("video, img");
+      const url = midiaEl ? midiaEl.getAttribute("src") : "";
+      if (tipoMidia === "imagem") {
+        const duracao = Number(card.querySelector(".duracao-foto").value) || 0;
+        return { tipoMidia, nome, url, duracao };
+      }
+      const inicio = Number(card.querySelector(".inicio-trecho").value) || 0;
+      const fim = Number(card.querySelector(".fim-trecho").value) || 0;
+      return { tipoMidia, nome, url, inicio, fim };
+    })
+    .filter((itemPrevia) =>
+      itemPrevia.tipoMidia === "imagem" ? itemPrevia.duracao > 0 : itemPrevia.fim > itemPrevia.inicio
+    );
+}
+
+function abrirPreviaSequenciaReels(painel) {
+  sequenciaPreviaReels = construirSequenciaPreviaReels(painel);
+  if (!sequenciaPreviaReels.length) {
+    alert("Nenhum item válido para pré-visualizar (verifique início/fim dos vídeos e a duração das fotos).");
+    return;
+  }
+  const modal = garantirModalPreviaReels();
+  modal.hidden = false;
+  previaReelsTocando = false;
+  carregarItemPreviaReels(0);
+  atualizarBotaoPlayPausePreviaReels();
+}
+
+function fecharPreviaSequenciaReels() {
+  const modal = document.getElementById("modal-previa-reels");
+  if (!modal) return;
+  const video = modal.querySelector("#previa-reels-video");
+  video.pause();
+  video.removeAttribute("src");
+  video.load();
+  limparTimerFotoPreviaReels();
+  previaReelsTocando = false;
+  modal.hidden = true;
+}
+
+function atualizarBotaoPlayPausePreviaReels() {
+  const modal = document.getElementById("modal-previa-reels");
+  modal.querySelector("#previa-reels-playpause").textContent = previaReelsTocando ? "⏸ Pausar" : "▶ Play";
+}
+
+function alternarPlayPausePreviaReels() {
+  const modal = document.getElementById("modal-previa-reels");
+  const video = modal.querySelector("#previa-reels-video");
+  const itemAtual = sequenciaPreviaReels[indicePreviaReelsAtual];
+  previaReelsTocando = !previaReelsTocando;
+  atualizarBotaoPlayPausePreviaReels();
+  if (!itemAtual) return;
+  if (itemAtual.tipoMidia === "video") {
+    if (previaReelsTocando) video.play();
+    else video.pause();
+  } else if (previaReelsTocando) {
+    iniciarTimerFotoPreviaReels(fotoPreviaReelsRestanteMs, geracaoPreviaReels);
+  } else {
+    pausarTimerFotoPreviaReels();
+  }
+}
+
+function avancarAutoPreviaReels() {
+  if (indicePreviaReelsAtual < sequenciaPreviaReels.length - 1) {
+    carregarItemPreviaReels(indicePreviaReelsAtual + 1);
+  } else {
+    previaReelsTocando = false;
+    atualizarBotaoPlayPausePreviaReels();
+    limparTimerFotoPreviaReels();
+    const modal = document.getElementById("modal-previa-reels");
+    modal.querySelector("#previa-reels-video").pause();
+  }
+}
+
+function carregarItemPreviaReels(indice) {
+  indicePreviaReelsAtual = indice;
+  geracaoPreviaReels += 1;
+  const geracaoAlvo = geracaoPreviaReels;
+  const itemAtual = sequenciaPreviaReels[indice];
+  const modal = garantirModalPreviaReels();
+  const video = modal.querySelector("#previa-reels-video");
+  const imagem = modal.querySelector("#previa-reels-imagem");
+
+  modal.querySelector("#previa-reels-titulo").textContent = `Item ${indice + 1} de ${sequenciaPreviaReels.length}`;
+  modal.querySelector("#previa-reels-nome").textContent = itemAtual.nome;
+  const badge = modal.querySelector("#previa-reels-badge");
+  badge.textContent = itemAtual.tipoMidia === "imagem" ? "FOTO" : "VÍDEO";
+  badge.className = "badge-tipo-midia " + (itemAtual.tipoMidia === "imagem" ? "badge-foto" : "badge-video");
+  modal.querySelector("#previa-reels-anterior").disabled = indice === 0;
+  modal.querySelector("#previa-reels-proxima").disabled = indice === sequenciaPreviaReels.length - 1;
+
+  limparTimerFotoPreviaReels();
+  video.pause();
+
+  if (itemAtual.tipoMidia === "imagem") {
+    video.hidden = true;
+    imagem.hidden = false;
+    imagem.src = itemAtual.url;
+    fotoPreviaReelsRestanteMs = itemAtual.duracao * 1000;
+    if (previaReelsTocando) iniciarTimerFotoPreviaReels(fotoPreviaReelsRestanteMs, geracaoAlvo);
+    return;
+  }
+
+  imagem.hidden = true;
+  video.hidden = false;
+  const iniciarNoTrecho = () => {
+    if (geracaoAlvo !== geracaoPreviaReels) return;
+    seekEmAndamentoPreviaReels = true;
+    let seekFinalizado = false;
+    const finalizarSeek = () => {
+      if (seekFinalizado) return;
+      seekFinalizado = true;
+      video.removeEventListener("seeked", finalizarSeek);
+      seekEmAndamentoPreviaReels = false;
+      if (geracaoAlvo !== geracaoPreviaReels) return;
+      if (previaReelsTocando) video.play();
+    };
+    video.addEventListener("seeked", finalizarSeek, { once: true });
+    video.currentTime = itemAtual.inicio;
+    // Salvaguarda: alguns navegadores não disparam "seeked" quando o valor
+    // pedido já é (ou está muito perto de) o currentTime atual.
+    setTimeout(finalizarSeek, 300);
+  };
+  if (video.src !== itemAtual.url) {
+    video.src = itemAtual.url;
+    video.addEventListener("loadedmetadata", iniciarNoTrecho, { once: true });
+  } else {
+    iniciarNoTrecho();
+  }
+}
+
 function formatarTempoVideo(segundos) {
   const valor = Math.max(0, Number(segundos) || 0);
   const minutos = Math.floor(valor / 60);
@@ -684,7 +930,7 @@ function criarTrechoRevisaoFoto(trecho, producaoId) {
     <div class="trecho-cabecalho">
       <strong class="ordem-trecho">Trecho ${trecho.ordem}</strong>
       <span class="badge-tipo-midia badge-foto">FOTO</span>
-      <span>${escaparHtml(trecho.arquivo)}</span>
+      <span class="nome-arquivo-trecho">${escaparHtml(trecho.arquivo)}</span>
     </div>
     <img class="previa-foto" loading="lazy" alt="${escaparHtml(trecho.arquivo)}"
       src="${urlPreviaMidia(producaoId, trecho)}">
@@ -739,7 +985,7 @@ function criarTrechoRevisao(trecho, producaoId) {
     <div class="trecho-cabecalho">
       <strong class="ordem-trecho">Trecho ${trecho.ordem}</strong>
       <span class="badge-tipo-midia badge-video">VÍDEO</span>
-      <span>${escaparHtml(trecho.arquivo)}</span>
+      <span class="nome-arquivo-trecho">${escaparHtml(trecho.arquivo)}</span>
     </div>
     <video class="previa-trecho" controls preload="none"
       src="${urlPreviaMidia(producaoId, trecho)}"></video>
