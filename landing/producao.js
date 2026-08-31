@@ -677,6 +677,48 @@ let timeoutFotoPreviaReels = null;
 let fotoPreviaReelsInicioTs = 0;
 let fotoPreviaReelsRestanteMs = 0;
 let seekEmAndamentoPreviaReels = false;
+let timeoutCargaPreviaReels = null;
+
+// Tempo máximo de espera por um vídeo ainda não cacheado no servidor (o
+// backend baixa o arquivo inteiro do Drive antes de responder — um vídeo de
+// ~35MB novo levou ~25s numa medição real). Generoso de propósito: melhor
+// esperar um pouco mais do que desistir de um carregamento que ia dar certo.
+const TIMEOUT_CARGA_PREVIA_REELS_MS = 45000;
+
+function limparTimeoutCargaPreviaReels() {
+  if (timeoutCargaPreviaReels) {
+    clearTimeout(timeoutCargaPreviaReels);
+    timeoutCargaPreviaReels = null;
+  }
+}
+
+function mostrarStatusPreviaReels(texto) {
+  const modal = document.getElementById("modal-previa-reels");
+  if (!modal) return;
+  const status = modal.querySelector("#previa-reels-status");
+  if (texto) {
+    status.textContent = texto;
+    status.hidden = false;
+  } else {
+    status.hidden = true;
+  }
+}
+
+function tratarFalhaCargaPreviaReels(geracaoAlvo, motivo) {
+  // Guarda contra reações tardias de um item que o usuário já deixou (ex.:
+  // um "error"/timeout chegando depois de já ter navegado para outro item).
+  if (geracaoAlvo !== geracaoPreviaReels) return;
+  limparTimeoutCargaPreviaReels();
+  mostrarStatusPreviaReels(`Não foi possível carregar este item (${motivo}). ${previaReelsTocando ? "Avançando…" : "Use Próximo para continuar."}`);
+  const modal = document.getElementById("modal-previa-reels");
+  modal.querySelector("#previa-reels-video").pause();
+  if (previaReelsTocando) {
+    setTimeout(() => {
+      if (geracaoAlvo !== geracaoPreviaReels) return;
+      avancarAutoPreviaReels();
+    }, 1500);
+  }
+}
 
 function limparTimerFotoPreviaReels() {
   if (timeoutFotoPreviaReels) {
@@ -720,8 +762,11 @@ function garantirModalPreviaReels() {
         <span id="previa-reels-badge" class="badge-tipo-midia badge-video">VÍDEO</span>
         <span id="previa-reels-nome"></span>
       </div>
-      <video id="previa-reels-video" class="previa-sequencia-video" playsinline></video>
-      <img id="previa-reels-imagem" class="previa-sequencia-video" alt="" hidden>
+      <div class="previa-reels-midia-wrapper">
+        <video id="previa-reels-video" class="previa-sequencia-video" playsinline></video>
+        <img id="previa-reels-imagem" class="previa-sequencia-video" alt="" hidden>
+        <div id="previa-reels-status" class="previa-reels-status" hidden></div>
+      </div>
       <div class="previa-sequencia-navegacao">
         <button type="button" id="previa-reels-anterior" class="botao-card">‹ Anterior</button>
         <button type="button" id="previa-reels-playpause" class="botao-card">▶ Play</button>
@@ -751,6 +796,17 @@ function garantirModalPreviaReels() {
       video.currentTime = itemAtual.inicio;
     }
   });
+  video.addEventListener("error", () => {
+    tratarFalhaCargaPreviaReels(geracaoPreviaReels, "erro ao carregar o vídeo");
+  });
+
+  const imagem = modal.querySelector("#previa-reels-imagem");
+  imagem.addEventListener("error", () => {
+    // A foto ainda avança sozinha pelo temporizador (ver iniciarTimerFotoPreviaReels);
+    // aqui só avisamos visualmente que a imagem não carregou.
+    mostrarStatusPreviaReels("Não foi possível carregar esta foto.");
+  });
+  imagem.addEventListener("load", () => mostrarStatusPreviaReels(null));
 
   modal.querySelector("#previa-reels-fechar").addEventListener("click", fecharPreviaSequenciaReels);
   modal.querySelector("#previa-reels-anterior").addEventListener("click", () => {
@@ -806,6 +862,8 @@ function fecharPreviaSequenciaReels() {
   video.removeAttribute("src");
   video.load();
   limparTimerFotoPreviaReels();
+  limparTimeoutCargaPreviaReels();
+  mostrarStatusPreviaReels(null);
   previaReelsTocando = false;
   modal.hidden = true;
 }
@@ -862,6 +920,8 @@ function carregarItemPreviaReels(indice) {
   modal.querySelector("#previa-reels-proxima").disabled = indice === sequenciaPreviaReels.length - 1;
 
   limparTimerFotoPreviaReels();
+  limparTimeoutCargaPreviaReels();
+  mostrarStatusPreviaReels(null);
   video.pause();
 
   if (itemAtual.tipoMidia === "imagem") {
@@ -877,6 +937,8 @@ function carregarItemPreviaReels(indice) {
   video.hidden = false;
   const iniciarNoTrecho = () => {
     if (geracaoAlvo !== geracaoPreviaReels) return;
+    limparTimeoutCargaPreviaReels();
+    mostrarStatusPreviaReels(null);
     seekEmAndamentoPreviaReels = true;
     let seekFinalizado = false;
     const finalizarSeek = () => {
@@ -894,8 +956,17 @@ function carregarItemPreviaReels(indice) {
     setTimeout(finalizarSeek, 300);
   };
   if (video.src !== itemAtual.url) {
+    // Um vídeo ainda não cacheado no servidor pode levar bastante tempo até
+    // o primeiro byte responder (o backend baixa do Drive por completo antes
+    // de servir) — "Carregando…" evita que a tela preta pareça travada, e o
+    // timeout garante que a prévia nunca fique presa indefinidamente se o
+    // carregamento nunca terminar.
+    mostrarStatusPreviaReels("Carregando vídeo…");
     video.src = itemAtual.url;
     video.addEventListener("loadedmetadata", iniciarNoTrecho, { once: true });
+    timeoutCargaPreviaReels = setTimeout(() => {
+      tratarFalhaCargaPreviaReels(geracaoAlvo, "tempo esgotado");
+    }, TIMEOUT_CARGA_PREVIA_REELS_MS);
   } else {
     iniciarNoTrecho();
   }

@@ -749,3 +749,22 @@ h1 {
   width: auto;
   padding: 8px 16px;
 }
+
+.previa-reels-midia-wrapper {
+  position: relative;
+}
+
+.previa-reels-status {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.55);
+  color: var(--branco);
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 7px;
+}
